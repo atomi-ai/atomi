@@ -8,7 +8,6 @@ import (
 	"github.com/atomi-ai/atomi/repositories"
 	"github.com/gin-gonic/gin"
 	"google.golang.org/api/option"
-	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"os"
 	"strings"
@@ -25,21 +24,7 @@ var firebaseApp *firebase.App
 var UserRepository repositories.UserRepository
 
 func main() {
-	dbUrl := "appuser:p6FGFvLcQ2sm@tcp(127.0.0.1:3306)/atomi_exp?charset=utf8&parseTime=True&loc=Local"
-	db, err = gorm.Open(mysql.Open(dbUrl), &gorm.Config{})
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	sqlDB, err := db.DB()
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-	defer sqlDB.Close()
-
-	db.AutoMigrate(&models.User{})
+	db = models.InitDB()
 	UserRepository = repositories.NewUserRepository(db)
 
 	// Initialize Firebase app, set your Firebase local emulator URL for testing.
