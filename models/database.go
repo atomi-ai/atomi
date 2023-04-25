@@ -26,7 +26,7 @@ func InitDB() *gorm.DB {
 		os.Exit(1)
 	}
 
-	autoMigrate(db, &Config{}, &User{}, &Product{}, &Store{}, &ProductStore{}, &UserStore{})
+	autoMigrate(db, &Config{}, &User{}, &Product{}, &Store{}, &ProductStore{}, &UserStore{}, &UserAddress{})
 
 	return db
 }

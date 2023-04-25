@@ -84,8 +84,8 @@ func (ctrl *StoreController) GetAllStores(c *gin.Context) {
 }
 
 func (sc *StoreController) DeleteDefaultStore(c *gin.Context) {
-	customUser, _ := c.Get("customUser")
-	err := sc.UserStoreRepo.DisableDefaultStore(customUser.(*models.CustomUser).ID)
+	user, _ := c.MustGet("user").(*models.User)
+	err := sc.UserStoreRepo.DisableDefaultStore(user.ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error deleting default store"})
 		return
@@ -117,10 +117,10 @@ func (sc *StoreController) GetProductsByStoreID(c *gin.Context) {
 }
 
 func getUserIDFromContext(c *gin.Context) (int64, error) {
-	user, exists := c.Get("customUser")
+	user, exists := c.MustGet("user").(*models.User)
 	if !exists {
 		return 0, errors.New("User not found in context")
 	}
 
-	return user.(*models.CustomUser).ID, nil
+	return user.ID, nil
 }

@@ -3,10 +3,13 @@ package main
 import (
 	"context"
 	"errors"
+	"firebase.google.com/go/v4/auth"
 	"fmt"
 	"github.com/atomi-ai/atomi/controllers"
+	"github.com/atomi-ai/atomi/middlewares"
 	"github.com/atomi-ai/atomi/models"
 	"github.com/atomi-ai/atomi/repositories"
+	"github.com/atomi-ai/atomi/services"
 	"github.com/gin-gonic/gin"
 	"google.golang.org/api/option"
 	"gorm.io/gorm"
@@ -14,7 +17,6 @@ import (
 	"strings"
 
 	firebase "firebase.google.com/go/v4"
-	"firebase.google.com/go/v4/auth"
 	"github.com/stripe/stripe-go/v72"
 	"github.com/stripe/stripe-go/v72/customer"
 )
@@ -26,7 +28,10 @@ var (
 	StoreRepository        repositories.StoreRepository
 	UserStoreRepository    repositories.UserStoreRepository
 	ProductStoreRepository repositories.ProductStoreRepository
-	err                    error
+	AddressRepository      repositories.AddressRepository
+	UserAddressRepository  repositories.UserAddressRepository
+
+	err error
 )
 
 func main() {
@@ -45,14 +50,24 @@ func main() {
 	StoreRepository = repositories.NewStoreRepository(db)
 	UserStoreRepository = repositories.NewUserStoreRepository(db)
 	ProductStoreRepository = repositories.NewProductStoreRepository(db)
+	AddressRepository = repositories.NewAddressRepository(db)
+	UserAddressRepository = repositories.NewUserAddressRepository(db)
+
 	storeController := controllers.StoreController{
 		UserStoreRepo:    UserStoreRepository,
 		StoreRepo:        StoreRepository,
 		ProductStoreRepo: ProductStoreRepository,
 	}
 
+	addressController := controllers.AddressController{
+		AddressService: services.NewAddressService(UserRepository, AddressRepository, UserAddressRepository),
+		UserService:    services.NewUserService(UserRepository),
+		AddressRepo:    AddressRepository,
+	}
+
 	r := gin.Default()
 	r.Use(AuthMiddleware())
+	r.Use(middlewares.RequestResponseLogger()) // 添加自定义的请求/响应日志中间件
 	r.GET("/api/login", Login)
 
 	// Add StoreController endpoints here
@@ -61,6 +76,16 @@ func main() {
 	r.GET("/api/stores", storeController.GetAllStores)
 	r.DELETE("/api/default-store", storeController.DeleteDefaultStore)
 	r.GET("/api/products/:store_id", storeController.GetProductsByStoreID)
+
+	// Add AddressController endpoints here
+	r.GET("/api/addresses", addressController.GetAllAddressesForUser)
+	r.POST("/api/addresses", addressController.AddAddressForUser)
+	r.DELETE("/api/addresses/:addressId", addressController.DeleteAddressForUser)
+	r.POST("/api/addresses/shipping/:addressId", addressController.SetDefaultShippingAddress)
+	r.POST("/api/addresses/billing/:addressId", addressController.SetDefaultBillingAddress)
+	r.GET("/api/addresses/shipping", addressController.GetDefaultShippingAddress)
+	r.GET("/api/addresses/billing", addressController.GetDefaultBillingAddress)
+	r.DELETE("/api/addresses", addressController.DeleteAllAddressesForUser)
 
 	r.Run(":8081")
 }
@@ -94,18 +119,8 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// Create a custom user object
-		customUser := &models.CustomUser{
-			ID:          user.ID,
-			Email:       user.Email,
-			Role:        user.Role,
-			PhoneNumber: user.Phone,
-			Name:        user.Name,
-			UID:         decodedToken.UID,
-		}
-
 		// Set the custom user and decoded token in the request context
-		c.Set("customUser", customUser)
+		c.Set("user", user)
 		c.Set("decodedToken", decodedToken)
 
 		c.Next()
@@ -113,8 +128,7 @@ func AuthMiddleware() gin.HandlerFunc {
 }
 
 func Login(c *gin.Context) {
-	decodedToken, _ := c.Get("decodedToken")
-	token := decodedToken.(*auth.Token)
+	token, _ := c.MustGet("decodedToken").(*auth.Token)
 
 	email, _ := token.Claims["email"].(string)
 	user, err := UserRepository.FindByEmail(email)
