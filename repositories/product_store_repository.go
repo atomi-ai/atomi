@@ -37,7 +37,7 @@ func (r *productStoreRepositoryImpl) Save(productStore *models.ProductStore) err
 // FindAllByStoreID retrieves all product stores by a given store ID
 func (r *productStoreRepositoryImpl) FindAllByStoreID(storeID int64) ([]*models.ProductStore, error) {
 	var productStores []*models.ProductStore
-	err := r.db.Where("store_id = ?", storeID).Find(&productStores).Error
+	err := r.db.Preload("Product").Where("store_id = ?", storeID).Find(&productStores).Error
 	if err != nil {
 		return nil, err
 	}

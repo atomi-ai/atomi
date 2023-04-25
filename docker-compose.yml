@@ -1,0 +1,33 @@
+version: '3.6'
+
+services:
+  mysql:
+    image: mysql:5.7
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: atomi
+      MYSQL_USER: appuser
+      MYSQL_PASSWORD: p6FGFvLcQ2sm
+    volumes:
+      - ./test_env/test_sqls:/docker-entrypoint-initdb.d
+    ports:
+      - 3306:3306
+
+  firebase:
+#    build:
+#      context: ./firebase
+#      dockerfile: ./Dockerfile
+    image: spine3/firebase-emulator
+    restart: always
+    environment:
+      GCP_PROJECT: "quickstart-123456"
+      ENABLE_UI: "true"
+    ports:
+      - 4000:4000
+      - 5001:5001
+      - 8080:8080
+      - 8085:8085
+      - 9000:9000
+      - 9099:9099
+      - 9199:9199

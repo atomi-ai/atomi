@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/atomi-ai/atomi/controllers"
 	"github.com/atomi-ai/atomi/models"
 	"github.com/atomi-ai/atomi/repositories"
 	"github.com/gin-gonic/gin"
@@ -18,14 +19,18 @@ import (
 	"github.com/stripe/stripe-go/v72/customer"
 )
 
-var db *gorm.DB
-var err error
-var firebaseApp *firebase.App
-var UserRepository repositories.UserRepository
+var (
+	db                     *gorm.DB
+	firebaseApp            *firebase.App
+	UserRepository         repositories.UserRepository
+	StoreRepository        repositories.StoreRepository
+	UserStoreRepository    repositories.UserStoreRepository
+	ProductStoreRepository repositories.ProductStoreRepository
+	err                    error
+)
 
 func main() {
 	db = models.InitDB()
-	UserRepository = repositories.NewUserRepository(db)
 
 	// Initialize Firebase app, set your Firebase local emulator URL for testing.
 	os.Setenv("FIREBASE_AUTH_EMULATOR_HOST", "localhost:9099")
@@ -36,10 +41,26 @@ func main() {
 		os.Exit(1)
 	}
 
+	UserRepository = repositories.NewUserRepository(db)
+	StoreRepository = repositories.NewStoreRepository(db)
+	UserStoreRepository = repositories.NewUserStoreRepository(db)
+	ProductStoreRepository = repositories.NewProductStoreRepository(db)
+	storeController := controllers.StoreController{
+		UserStoreRepo:    UserStoreRepository,
+		StoreRepo:        StoreRepository,
+		ProductStoreRepo: ProductStoreRepository,
+	}
+
 	r := gin.Default()
 	r.Use(AuthMiddleware())
 	r.GET("/api/login", Login)
-	// Add other endpoints here
+
+	// Add StoreController endpoints here
+	r.GET("/api/default-store", storeController.GetDefaultStore)
+	r.PUT("/api/default-store/:store_id", storeController.SetDefaultStore)
+	r.GET("/api/stores", storeController.GetAllStores)
+	r.DELETE("/api/default-store", storeController.DeleteDefaultStore)
+	r.GET("/api/products/:store_id", storeController.GetProductsByStoreID)
 
 	r.Run(":8081")
 }
@@ -66,8 +87,27 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// Set the decoded token in the request context
+		email := decodedToken.Claims["email"].(string)
+		user, err := UserRepository.FindByEmail(email)
+		if err != nil {
+			c.AbortWithStatusJSON(500, gin.H{"error": "Error finding user by email"})
+			return
+		}
+
+		// Create a custom user object
+		customUser := &models.CustomUser{
+			ID:          user.ID,
+			Email:       user.Email,
+			Role:        user.Role,
+			PhoneNumber: user.Phone,
+			Name:        user.Name,
+			UID:         decodedToken.UID,
+		}
+
+		// Set the custom user and decoded token in the request context
+		c.Set("customUser", customUser)
 		c.Set("decodedToken", decodedToken)
+
 		c.Next()
 	}
 }

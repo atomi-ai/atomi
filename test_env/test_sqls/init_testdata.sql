@@ -1,0 +1,4 @@
+CREATE DATABASE IF NOT EXISTS atomi_exp;
+
+GRANT ALL PRIVILEGES ON atomi_exp.* TO 'appuser'@'%';
+FLUSH PRIVILEGES;
