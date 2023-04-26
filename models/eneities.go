@@ -8,9 +8,9 @@ import (
 type ProductCategory string
 
 const (
-	ProductCategoryFood  ProductCategory = "food"
-	ProductCategoryDrink ProductCategory = "drink"
-	ProductCategoryOther ProductCategory = "other"
+	ProductCategoryFood  ProductCategory = "FOOD"
+	ProductCategoryDrink ProductCategory = "DRINK"
+	ProductCategoryOther ProductCategory = "OTHER"
 )
 
 // Product represents the product entity
