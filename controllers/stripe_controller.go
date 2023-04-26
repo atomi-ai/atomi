@@ -12,10 +12,10 @@ import (
 
 type StripeController interface {
 	AttachPaymentMethodToCustomer(c *gin.Context)
-	ListPaymentMethods(c *gin.Context)
-	DeletePaymentMethod(c *gin.Context)
-	Pay(c *gin.Context)
 	DeleteAllPaymentMethods(c *gin.Context)
+	DeletePaymentMethod(c *gin.Context)
+	ListPaymentMethods(c *gin.Context)
+	Pay(c *gin.Context)
 }
 
 type StripeControllerImpl struct {

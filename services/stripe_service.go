@@ -6,6 +6,7 @@ import (
 	"github.com/stripe/stripe-go/v74"
 	"github.com/stripe/stripe-go/v74/client"
 	"github.com/stripe/stripe-go/v74/customer"
+	"github.com/stripe/stripe-go/v74/paymentintent"
 	"github.com/stripe/stripe-go/v74/paymentmethod"
 )
 
@@ -86,7 +87,7 @@ func (s *StripeServiceImpl) CreatePaymentIntent(user *models.User, piRequest *mo
 		}
 	}
 
-	return s.sc.PaymentIntents.New(params)
+	return paymentintent.New(params)
 }
 
 func (s *StripeServiceImpl) GetLatestCustomerIdByEmail(email string) (string, error) {

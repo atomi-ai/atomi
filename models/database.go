@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"github.com/spf13/viper"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -17,8 +18,7 @@ func autoMigrate(db *gorm.DB, entities ...interface{}) {
 }
 
 func InitDB() *gorm.DB {
-	dbUrl := "appuser:p6FGFvLcQ2sm@tcp(127.0.0.1:3306)/atomi_exp?charset=utf8&parseTime=True&loc=Local"
-	db, err := gorm.Open(mysql.Open(dbUrl), &gorm.Config{
+	db, err := gorm.Open(mysql.Open(viper.GetString("dbUrl")), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info), // Can set LogLevel here
 	})
 	if err != nil {

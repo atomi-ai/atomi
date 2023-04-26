@@ -12,7 +12,16 @@ import (
 
 func RequestResponseLogger() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		user := c.MustGet("user").(*models.User)
+		var user *models.User
+		u, exist := c.Get("user")
+		if !exist {
+			user = &models.User{
+				ID:    0,
+				Email: "not-set-yet",
+			}
+		} else {
+			user = u.(*models.User)
+		}
 
 		// 请求
 		reqBody, _ := c.GetRawData()

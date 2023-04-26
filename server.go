@@ -11,8 +11,10 @@ import (
 	"github.com/atomi-ai/atomi/repositories"
 	"github.com/atomi-ai/atomi/services"
 	"github.com/gin-gonic/gin"
+	"github.com/spf13/viper"
 	"google.golang.org/api/option"
 	"gorm.io/gorm"
+	"log"
 	"os"
 	"strings"
 
@@ -43,18 +45,35 @@ func initStripe(key string) {
 	stripe.Key = key
 }
 
-func main() {
-	db = models.InitDB()
-	initStripe("sk_test_x7J2qxqTLBNo4WQoYkRNMEGx")
+func LoadConfig() {
+	configFile := os.Getenv("CONFIG_FILE")
+	viper.SetConfigFile(configFile)
 
+	err := viper.ReadInConfig()
+	if err != nil {
+		log.Fatalf("Error reading config file: %s", err)
+	}
+}
+
+func initFirebase() {
 	// Initialize Firebase app, set your Firebase local emulator URL for testing.
-	os.Setenv("FIREBASE_AUTH_EMULATOR_HOST", "localhost:9099")
-	opt := option.WithCredentialsFile("testing/testing-firebase-secret.json")
+	if viper.GetBool("firebaseEnableEmulator") {
+		os.Setenv("FIREBASE_AUTH_EMULATOR_HOST", viper.GetString("firebaseAuthEmulatorHost"))
+	}
+	opt := option.WithCredentialsFile(viper.GetString("firebaseCredentialsFile"))
 	firebaseApp, err = firebase.NewApp(context.Background(), nil, opt)
 	if err != nil {
 		fmt.Println("error initializing firebase app:", err)
 		os.Exit(1)
 	}
+}
+
+func main() {
+	LoadConfig()
+
+	db = models.InitDB()
+	initStripe(viper.GetString("stripeKey"))
+	initFirebase()
 
 	UserRepository = repositories.NewUserRepository(db)
 	StoreRepository = repositories.NewStoreRepository(db)
@@ -65,7 +84,6 @@ func main() {
 
 	AddressService = services.NewAddressService(UserRepository, AddressRepository, UserAddressRepository)
 	UserService = services.NewUserService(UserRepository)
-	// TODO(lamuguo): Move the api key to env.
 	StripeService = services.NewStripeService()
 
 	storeController := controllers.NewStoreController(ProductStoreRepository, StoreRepository, UserStoreRepository)
@@ -106,6 +124,7 @@ func main() {
 	r.GET("/api/user", userController.GetUser)
 	r.PUT("/api/user/current-payment-method/:paymentMethodId", userController.SetCurrentPaymentMethod)
 
+	// APIs below are not tested by flutter tests yet.
 	r.Run(":8081")
 }
 
@@ -133,13 +152,9 @@ func AuthMiddleware() gin.HandlerFunc {
 
 		email := decodedToken.Claims["email"].(string)
 		user, err := UserRepository.FindByEmail(email)
-		if err != nil {
-			c.AbortWithStatusJSON(500, gin.H{"error": "Error finding user by email"})
-			return
+		if err == nil {
+			c.Set("user", user)
 		}
-
-		// Set the custom user and decoded token in the request context
-		c.Set("user", user)
 		c.Set("decodedToken", decodedToken)
 
 		c.Next()
