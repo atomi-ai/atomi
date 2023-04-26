@@ -11,13 +11,29 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type StoreController struct {
-	UserStoreRepo    repositories.UserStoreRepository
-	StoreRepo        repositories.StoreRepository
-	ProductStoreRepo repositories.ProductStoreRepository
+type StoreController interface {
+	GetDefaultStore(c *gin.Context)
+	SetDefaultStore(c *gin.Context)
+	GetAllStores(c *gin.Context)
+	DeleteDefaultStore(c *gin.Context)
+	GetProductsByStoreID(c *gin.Context)
 }
 
-func (ctrl *StoreController) GetDefaultStore(c *gin.Context) {
+type StoreControllerImpl struct {
+	ProductStoreRepo repositories.ProductStoreRepository
+	StoreRepo        repositories.StoreRepository
+	UserStoreRepo    repositories.UserStoreRepository
+}
+
+func NewStoreController(psRepo repositories.ProductStoreRepository, storeRep repositories.StoreRepository, usRepo repositories.UserStoreRepository) StoreController {
+	return &StoreControllerImpl{
+		ProductStoreRepo: psRepo,
+		StoreRepo:        storeRep,
+		UserStoreRepo:    usRepo,
+	}
+}
+
+func (ctrl *StoreControllerImpl) GetDefaultStore(c *gin.Context) {
 	userID, err := getUserIDFromContext(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -33,7 +49,7 @@ func (ctrl *StoreController) GetDefaultStore(c *gin.Context) {
 	c.JSON(http.StatusOK, userStore.Store)
 }
 
-func (ctrl *StoreController) SetDefaultStore(c *gin.Context) {
+func (ctrl *StoreControllerImpl) SetDefaultStore(c *gin.Context) {
 	userID, err := getUserIDFromContext(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -73,7 +89,7 @@ func (ctrl *StoreController) SetDefaultStore(c *gin.Context) {
 	c.JSON(http.StatusOK, store)
 }
 
-func (ctrl *StoreController) GetAllStores(c *gin.Context) {
+func (ctrl *StoreControllerImpl) GetAllStores(c *gin.Context) {
 	stores, err := ctrl.StoreRepo.FindAll()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error retrieving all stores"})
@@ -83,7 +99,7 @@ func (ctrl *StoreController) GetAllStores(c *gin.Context) {
 	c.JSON(http.StatusOK, stores)
 }
 
-func (sc *StoreController) DeleteDefaultStore(c *gin.Context) {
+func (sc *StoreControllerImpl) DeleteDefaultStore(c *gin.Context) {
 	user, _ := c.MustGet("user").(*models.User)
 	err := sc.UserStoreRepo.DisableDefaultStore(user.ID)
 	if err != nil {
@@ -94,7 +110,7 @@ func (sc *StoreController) DeleteDefaultStore(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Default store deleted successfully"})
 }
 
-func (sc *StoreController) GetProductsByStoreID(c *gin.Context) {
+func (sc *StoreControllerImpl) GetProductsByStoreID(c *gin.Context) {
 	storeIDStr := c.Param("store_id")
 	storeID, err := strconv.ParseInt(storeIDStr, 10, 64)
 	if err != nil {

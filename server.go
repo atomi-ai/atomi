@@ -17,13 +17,14 @@ import (
 	"strings"
 
 	firebase "firebase.google.com/go/v4"
-	"github.com/stripe/stripe-go/v72"
-	"github.com/stripe/stripe-go/v72/customer"
+	"github.com/stripe/stripe-go/v74"
+	"github.com/stripe/stripe-go/v74/customer"
 )
 
 var (
-	db                     *gorm.DB
-	firebaseApp            *firebase.App
+	db          *gorm.DB
+	firebaseApp *firebase.App
+
 	UserRepository         repositories.UserRepository
 	StoreRepository        repositories.StoreRepository
 	UserStoreRepository    repositories.UserStoreRepository
@@ -31,11 +32,20 @@ var (
 	AddressRepository      repositories.AddressRepository
 	UserAddressRepository  repositories.UserAddressRepository
 
+	UserService    services.UserService
+	StripeService  services.StripeService
+	AddressService services.AddressService
+
 	err error
 )
 
+func initStripe(key string) {
+	stripe.Key = key
+}
+
 func main() {
 	db = models.InitDB()
+	initStripe("sk_test_x7J2qxqTLBNo4WQoYkRNMEGx")
 
 	// Initialize Firebase app, set your Firebase local emulator URL for testing.
 	os.Setenv("FIREBASE_AUTH_EMULATOR_HOST", "localhost:9099")
@@ -53,17 +63,15 @@ func main() {
 	AddressRepository = repositories.NewAddressRepository(db)
 	UserAddressRepository = repositories.NewUserAddressRepository(db)
 
-	storeController := controllers.StoreController{
-		UserStoreRepo:    UserStoreRepository,
-		StoreRepo:        StoreRepository,
-		ProductStoreRepo: ProductStoreRepository,
-	}
+	AddressService = services.NewAddressService(UserRepository, AddressRepository, UserAddressRepository)
+	UserService = services.NewUserService(UserRepository)
+	// TODO(lamuguo): Move the api key to env.
+	StripeService = services.NewStripeService()
 
-	addressController := controllers.AddressController{
-		AddressService: services.NewAddressService(UserRepository, AddressRepository, UserAddressRepository),
-		UserService:    services.NewUserService(UserRepository),
-		AddressRepo:    AddressRepository,
-	}
+	storeController := controllers.NewStoreController(ProductStoreRepository, StoreRepository, UserStoreRepository)
+	addressController := controllers.NewAddressControl(AddressService, UserService, AddressRepository)
+	stripeController := controllers.NewStripeController(UserService, StripeService, AddressRepository)
+	userController := controllers.NewUserController(UserRepository)
 
 	r := gin.Default()
 	r.Use(AuthMiddleware())
@@ -86,6 +94,17 @@ func main() {
 	r.GET("/api/addresses/shipping", addressController.GetDefaultShippingAddress)
 	r.GET("/api/addresses/billing", addressController.GetDefaultBillingAddress)
 	r.DELETE("/api/addresses", addressController.DeleteAllAddressesForUser)
+
+	// Add payment endpoints here.
+	r.PUT("/api/payment-methods/:paymentMethodId", stripeController.AttachPaymentMethodToCustomer)
+	r.GET("/api/payment-methods", stripeController.ListPaymentMethods)
+	r.DELETE("/api/payment-methods/:paymentMethodId", stripeController.DeletePaymentMethod)
+	r.POST("/api/pay", stripeController.Pay)
+	r.DELETE("/api/payment-methods", stripeController.DeleteAllPaymentMethods)
+
+	// Add user endpoints here
+	r.GET("/api/user", userController.GetUser)
+	r.PUT("/api/user/current-payment-method/:paymentMethodId", userController.SetCurrentPaymentMethod)
 
 	r.Run(":8081")
 }
@@ -163,8 +182,6 @@ func Login(c *gin.Context) {
 }
 
 func createStripeCustomer(email string) (*stripe.Customer, error) {
-	stripe.Key = "sk_test_x7J2qxqTLBNo4WQoYkRNMEGx"
-
 	params := &stripe.CustomerParams{
 		Email: stripe.String(email),
 	}

@@ -33,9 +33,10 @@ func RequestResponseLogger() gin.HandlerFunc {
 		c.Next()
 
 		responseBody := writer.body.String()
-		fmt.Printf("\n[%s] (%v, %v) Response: %d %s\nHeaders: %v\nBody: %s\n",
+		fmt.Printf("\n[%s] (%v, %v) (%v, %v) Response: %d %s\nHeaders: %v\nBody: %s\n",
 			time.Now().Format(time.RFC3339),
 			user.ID, user.Email,
+			c.Request.Method, c.Request.URL,
 			writer.Status(),
 			http.StatusText(writer.Status()),
 			writer.Header(),

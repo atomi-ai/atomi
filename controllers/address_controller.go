@@ -9,13 +9,32 @@ import (
 	"strconv"
 )
 
-type AddressController struct {
+type AddressController interface {
+	GetAllAddressesForUser(c *gin.Context)
+	AddAddressForUser(c *gin.Context)
+	DeleteAddressForUser(c *gin.Context)
+	SetDefaultShippingAddress(c *gin.Context)
+	SetDefaultBillingAddress(c *gin.Context)
+	GetDefaultShippingAddress(c *gin.Context)
+	GetDefaultBillingAddress(c *gin.Context)
+	DeleteAllAddressesForUser(c *gin.Context)
+}
+
+type AddressControllerImpl struct {
 	AddressService services.AddressService
 	UserService    services.UserService
 	AddressRepo    repositories.AddressRepository
 }
 
-func (ac *AddressController) GetAllAddressesForUser(c *gin.Context) {
+func NewAddressControl(addressServoce services.AddressService, userService services.UserService, addressRepo repositories.AddressRepository) AddressController {
+	return &AddressControllerImpl{
+		UserService:    userService,
+		AddressRepo:    addressRepo,
+		AddressService: addressServoce,
+	}
+}
+
+func (ac *AddressControllerImpl) GetAllAddressesForUser(c *gin.Context) {
 	user := c.MustGet("user").(*models.User)
 
 	addresses, err := ac.AddressService.GetAddressesByUserId(user.ID)
@@ -27,7 +46,7 @@ func (ac *AddressController) GetAllAddressesForUser(c *gin.Context) {
 	c.JSON(http.StatusOK, addresses)
 }
 
-func (ac *AddressController) AddAddressForUser(c *gin.Context) {
+func (ac *AddressControllerImpl) AddAddressForUser(c *gin.Context) {
 	user := c.MustGet("user").(*models.User)
 
 	var address models.Address
@@ -45,7 +64,7 @@ func (ac *AddressController) AddAddressForUser(c *gin.Context) {
 	c.JSON(http.StatusOK, savedAddress)
 }
 
-func (ac *AddressController) DeleteAddressForUser(c *gin.Context) {
+func (ac *AddressControllerImpl) DeleteAddressForUser(c *gin.Context) {
 	user := c.MustGet("user").(*models.User)
 	addressId, _ := strconv.ParseInt(c.Param("addressId"), 10, 64)
 
@@ -58,7 +77,7 @@ func (ac *AddressController) DeleteAddressForUser(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "success"})
 }
 
-func (ac *AddressController) SetDefaultShippingAddress(c *gin.Context) {
+func (ac *AddressControllerImpl) SetDefaultShippingAddress(c *gin.Context) {
 	user := c.MustGet("user").(*models.User)
 	addressId, _ := strconv.ParseInt(c.Param("addressId"), 10, 64)
 
@@ -71,7 +90,7 @@ func (ac *AddressController) SetDefaultShippingAddress(c *gin.Context) {
 	c.JSON(http.StatusOK, updatedUser)
 }
 
-func (ac *AddressController) SetDefaultBillingAddress(c *gin.Context) {
+func (ac *AddressControllerImpl) SetDefaultBillingAddress(c *gin.Context) {
 	user := c.MustGet("user").(*models.User)
 	addressId, _ := strconv.ParseInt(c.Param("addressId"), 10, 64)
 
@@ -84,7 +103,7 @@ func (ac *AddressController) SetDefaultBillingAddress(c *gin.Context) {
 	c.JSON(http.StatusOK, updatedUser)
 }
 
-func (ac *AddressController) GetDefaultShippingAddress(c *gin.Context) {
+func (ac *AddressControllerImpl) GetDefaultShippingAddress(c *gin.Context) {
 	user := c.MustGet("user").(*models.User)
 
 	address, err := ac.AddressRepo.FindByID(user.DefaultShippingAddressID)
@@ -95,7 +114,7 @@ func (ac *AddressController) GetDefaultShippingAddress(c *gin.Context) {
 	c.JSON(http.StatusOK, address)
 }
 
-func (ac *AddressController) GetDefaultBillingAddress(c *gin.Context) {
+func (ac *AddressControllerImpl) GetDefaultBillingAddress(c *gin.Context) {
 	user := c.MustGet("user").(*models.User)
 
 	address, err := ac.AddressRepo.FindByID(user.DefaultBillingAddressID)
@@ -106,7 +125,7 @@ func (ac *AddressController) GetDefaultBillingAddress(c *gin.Context) {
 	c.JSON(http.StatusOK, address)
 }
 
-func (ac *AddressController) DeleteAllAddressesForUser(c *gin.Context) {
+func (ac *AddressControllerImpl) DeleteAllAddressesForUser(c *gin.Context) {
 	user := c.MustGet("user").(*models.User)
 
 	err := ac.AddressService.DeleteAllAddressesForUser(user)

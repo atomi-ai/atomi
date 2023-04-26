@@ -5,7 +5,7 @@ go 1.20
 require (
 	firebase.google.com/go/v4 v4.11.0
 	github.com/gin-gonic/gin v1.9.0
-	github.com/stripe/stripe-go/v72 v72.122.0
+	github.com/stripe/stripe-go/v74 v74.15.0
 	google.golang.org/api v0.119.0
 	gorm.io/driver/mysql v1.5.0
 	gorm.io/gorm v1.25.0
