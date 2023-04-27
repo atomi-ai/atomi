@@ -23,6 +23,8 @@ go.work
 # Manual added
 .idea
 vendor
+.history
+.vscode
 
 # Key related files
 .config/firebase-secret-20230317.json

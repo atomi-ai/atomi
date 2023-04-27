@@ -3,14 +3,15 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/atomi-ai/atomi/services"
-	"google.golang.org/api/option"
 	"os"
 
 	firebase "firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/auth"
 	"github.com/atomi-ai/atomi/models"
 	"github.com/atomi-ai/atomi/repositories"
+	"github.com/atomi-ai/atomi/services"
+	"github.com/spf13/viper"
+	"google.golang.org/api/option"
 )
 
 const (
@@ -26,7 +27,18 @@ type TestEnvSetup struct {
 	UserRepository      repositories.UserRepository
 }
 
+func LoadConfig() {
+	configFile := os.Getenv("CONFIG_FILE")
+	viper.SetConfigFile(configFile)
+
+	err := viper.ReadInConfig()
+	if err != nil {
+		fmt.Println("Error reading config file: %s", err)
+	}
+}
+
 func main() {
+	LoadConfig()
 	db := models.InitDB()
 
 	testEnvSetup := &TestEnvSetup{
@@ -39,7 +51,7 @@ func main() {
 
 	// Initialize Firebase app, set your Firebase local emulator URL for testing.
 	os.Setenv("FIREBASE_AUTH_EMULATOR_HOST", "localhost:9099")
-	opt := option.WithCredentialsFile("testing/testing-firebase-secret.json")
+	opt := option.WithCredentialsFile(viper.GetString("firebaseCredentialsFile"))
 	firebaseApp, err := firebase.NewApp(context.Background(), nil, opt)
 	if err != nil {
 		fmt.Println("error initializing firebase app:", err)
