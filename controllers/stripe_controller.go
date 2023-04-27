@@ -2,12 +2,13 @@ package controllers
 
 import (
 	"encoding/json"
+	"net/http"
+
 	"github.com/atomi-ai/atomi/models"
 	"github.com/atomi-ai/atomi/repositories"
 	"github.com/atomi-ai/atomi/services"
 	"github.com/gin-gonic/gin"
 	"github.com/stripe/stripe-go/v74"
-	"net/http"
 )
 
 type StripeController interface {
@@ -99,7 +100,7 @@ func (sc *StripeControllerImpl) Pay(c *gin.Context) {
 		shippingAddrID = user.DefaultShippingAddressID
 	}
 
-	shippingAddr, err := sc.AddressRepo.FindByID(user.DefaultShippingAddressID)
+	shippingAddr, err := sc.AddressRepo.FindByID(shippingAddrID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
