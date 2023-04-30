@@ -47,6 +47,7 @@ func initStripe(key string) {
 
 func LoadConfig() {
 	configFile := os.Getenv("CONFIG_FILE")
+	log.Printf("Load config from file: %v", configFile)
 	viper.SetConfigFile(configFile)
 
 	err := viper.ReadInConfig()

@@ -1,0 +1,21 @@
+---
+kind: pipeline
+type: kubernetes
+name: build-and-publish
+
+steps:
+
+- name: docker-build-and-publish
+  image: plugins/docker
+  settings:
+    repo: adminatomi/server
+    tags:
+      - "${DRONE_BRANCH}-${DRONE_COMMIT_SHA:0:7}"
+    dockerfile: Dockerfile
+    username: adminatomi
+    password:
+      from_secret: DOCKER_PASSWORD
+    context: .
+  when:
+    event:
+    - push
