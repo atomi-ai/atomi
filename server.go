@@ -3,8 +3,12 @@ package main
 import (
 	"context"
 	"errors"
-	"firebase.google.com/go/v4/auth"
 	"fmt"
+	"log"
+	"os"
+	"strings"
+
+	"firebase.google.com/go/v4/auth"
 	"github.com/atomi-ai/atomi/controllers"
 	"github.com/atomi-ai/atomi/middlewares"
 	"github.com/atomi-ai/atomi/models"
@@ -14,9 +18,6 @@ import (
 	"github.com/spf13/viper"
 	"google.golang.org/api/option"
 	"gorm.io/gorm"
-	"log"
-	"os"
-	"strings"
 
 	firebase "firebase.google.com/go/v4"
 	"github.com/stripe/stripe-go/v74"
@@ -33,10 +34,13 @@ var (
 	ProductStoreRepository repositories.ProductStoreRepository
 	AddressRepository      repositories.AddressRepository
 	UserAddressRepository  repositories.UserAddressRepository
+	OrderRepository        repositories.OrderRepository
+	OrderItemRepository    repositories.OrderItemRepository
 
 	UserService    services.UserService
 	StripeService  services.StripeService
 	AddressService services.AddressService
+	OrderService   services.OrderService
 
 	err error
 )
@@ -82,15 +86,19 @@ func main() {
 	ProductStoreRepository = repositories.NewProductStoreRepository(db)
 	AddressRepository = repositories.NewAddressRepository(db)
 	UserAddressRepository = repositories.NewUserAddressRepository(db)
+	OrderRepository = repositories.NewOrderRepository(db)
+	OrderItemRepository = repositories.NewOrderItemRepository(db)
 
 	AddressService = services.NewAddressService(UserRepository, AddressRepository, UserAddressRepository)
 	UserService = services.NewUserService(UserRepository)
 	StripeService = services.NewStripeService()
+	OrderService = services.NewOrderService(OrderRepository, OrderItemRepository, StripeService)
 
 	storeController := controllers.NewStoreController(ProductStoreRepository, StoreRepository, UserStoreRepository)
 	addressController := controllers.NewAddressControl(AddressService, UserService, AddressRepository)
-	stripeController := controllers.NewStripeController(UserService, StripeService, AddressRepository)
+	stripeController := controllers.NewStripeController(UserService, StripeService, OrderService, AddressRepository)
 	userController := controllers.NewUserController(UserRepository)
+	orderController := controllers.NewOrderController(OrderService)
 
 	r := gin.Default()
 	r.Use(AuthMiddleware())
@@ -120,10 +128,16 @@ func main() {
 	r.DELETE("/api/payment-methods/:paymentMethodId", stripeController.DeletePaymentMethod)
 	r.POST("/api/pay", stripeController.Pay)
 	r.DELETE("/api/payment-methods", stripeController.DeleteAllPaymentMethods)
+	r.GET("/api/payment-intents", stripeController.ListPaymentIntents)
+	r.GET("/api/payment-intent/:paymentIntentId", stripeController.PaymentIntent)
 
 	// Add user endpoints here
 	r.GET("/api/user", userController.GetUser)
 	r.PUT("/api/user/current-payment-method/:paymentMethodId", userController.SetCurrentPaymentMethod)
+
+	// Add order endpoints here
+	r.GET("/api/orders", orderController.GetUserOrders)
+	r.POST("/api/order", orderController.AddOrderForUser)
 
 	// APIs below are not tested by flutter tests yet.
 	r.Run(":8081")

@@ -2,11 +2,12 @@ package models
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/spf13/viper"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-	"os"
 )
 
 func autoMigrate(db *gorm.DB, entities ...interface{}) {
@@ -26,7 +27,8 @@ func InitDB() *gorm.DB {
 		os.Exit(1)
 	}
 
-	autoMigrate(db, &Config{}, &User{}, &Product{}, &Store{}, &ProductStore{}, &UserStore{}, &UserAddress{})
+	autoMigrate(db, &Config{}, &User{}, &Product{}, &Store{}, &ProductStore{},
+		&UserStore{}, &UserAddress{}, &Order{}, &OrderItem{})
 
 	return db
 }
