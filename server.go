@@ -97,7 +97,7 @@ func main() {
 	storeController := controllers.NewStoreController(ProductStoreRepository, StoreRepository, UserStoreRepository)
 	addressController := controllers.NewAddressControl(AddressService, UserService, AddressRepository)
 	stripeController := controllers.NewStripeController(UserService, StripeService, OrderService, AddressRepository)
-	userController := controllers.NewUserController(UserRepository)
+	userController := controllers.NewUserController(UserService)
 	orderController := controllers.NewOrderController(OrderService)
 
 	r := gin.Default()
