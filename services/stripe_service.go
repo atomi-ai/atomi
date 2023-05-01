@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+
 	"github.com/atomi-ai/atomi/models"
 	"github.com/stripe/stripe-go/v74"
 	"github.com/stripe/stripe-go/v74/client"
@@ -17,6 +18,8 @@ type StripeService interface {
 	ListPaymentMethods(stripeCustomerId string) (*paymentmethod.Iter, error)
 	CreatePaymentIntent(user *models.User, piRequest *models.PaymentIntentRequest, shippingAddr *models.Address) (*stripe.PaymentIntent, error)
 	GetLatestCustomerIdByEmail(email string) (string, error)
+	ListPaymentIntents(stripeCustomerID string) (*paymentintent.Iter, error)
+	RetrievePaymentIntent(intent string) (*stripe.PaymentIntent, error)
 }
 
 type StripeServiceImpl struct {
@@ -107,4 +110,20 @@ func (s *StripeServiceImpl) GetLatestCustomerIdByEmail(email string) (string, er
 	}
 
 	return i.Customer().ID, nil
+}
+
+func (s *StripeServiceImpl) ListPaymentIntents(stripeCustomerID string) (*paymentintent.Iter, error) {
+	params := &stripe.PaymentIntentListParams{
+		Customer: stripe.String(stripeCustomerID),
+	}
+	params.AddExpand("data.latest_charge")
+
+	return paymentintent.List(params), nil
+}
+
+func (s *StripeServiceImpl) RetrievePaymentIntent(intent string) (*stripe.PaymentIntent, error) {
+	params := &stripe.PaymentIntentParams{}
+	params.AddExpand("latest_charge")
+
+	return paymentintent.Get(intent, params)
 }
