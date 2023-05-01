@@ -4,6 +4,16 @@ type: kubernetes
 name: build-and-publish
 
 steps:
+- name: go-build
+  image: golang:1.20
+  commands:
+    - go mod download
+    - go install github.com/atomi-ai/atomi/...
+  environment:
+    GO111MODULE: on
+  when:
+    event:
+      - push
 
 - name: docker-build-and-publish
   image: plugins/docker

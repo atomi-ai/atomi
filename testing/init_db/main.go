@@ -139,7 +139,7 @@ func (t *TestEnvSetup) checkOrCreateUserInFirebase(authClient *auth.Client, emai
 			Email: userRecord.Email,
 			Role:  role,
 		}
-		err = t.UserRepository.Save(user)
+		_, err = t.UserRepository.Save(user)
 		if err != nil {
 			return nil, fmt.Errorf("Error saving user to database: %w", err)
 		}

@@ -14,7 +14,7 @@ func main() {
 		Email: "test7@atomi.ai",
 		Role:  models.RoleUser,
 	}
-	err := userRepo.Save(user)
+	_, err := userRepo.Save(user)
 	if err != nil {
 		fmt.Errorf("Error saving user to database: %w", err)
 	}
