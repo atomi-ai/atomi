@@ -85,7 +85,16 @@ func (sc *StripeControllerImpl) DeletePaymentMethod(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
+	// 检查要删除的 paymentMethodID 是否是用户表中的 PaymentMethodID
+	user := c.MustGet("user").(*models.User)
+	if user.PaymentMethodID != nil && *user.PaymentMethodID == paymentMethodID {
+		// 如果匹配，将 PaymentMethodID 设置为 nil 并保存更改
+		_, err = sc.UserService.SetCurrentPaymentMethod(user, nil)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+	}
 	c.JSON(http.StatusOK, pm)
 }
 
@@ -157,6 +166,12 @@ func (sc *StripeControllerImpl) DeleteAllPaymentMethods(c *gin.Context) {
 
 	// 检查迭代器中是否存在错误
 	if err := iter.Err(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	_, err = sc.UserService.SetCurrentPaymentMethod(user, nil)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

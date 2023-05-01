@@ -75,7 +75,7 @@ func (as *addressServiceImpl) DeleteAddressForUser(user *models.User, addressID 
 		user.DefaultBillingAddressID = 0
 	}
 	if dirty {
-		err = as.UserRepo.Save(user)
+		_, err = as.UserRepo.Save(user)
 		if err != nil {
 			return err
 		}
@@ -103,7 +103,7 @@ func (as *addressServiceImpl) DeleteAllAddressesForUser(user *models.User) error
 		user.DefaultBillingAddressID = 0
 	}
 	if dirty {
-		err = as.UserRepo.Save(user)
+		_, err = as.UserRepo.Save(user)
 		if err != nil {
 			return err
 		}

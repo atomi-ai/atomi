@@ -1,8 +1,9 @@
 package controllers
 
 import (
-	"github.com/atomi-ai/atomi/repositories"
 	"net/http"
+
+	"github.com/atomi-ai/atomi/services"
 
 	"github.com/atomi-ai/atomi/models"
 	"github.com/gin-gonic/gin"
@@ -14,12 +15,12 @@ type UserController interface {
 }
 
 type UserControllerImpl struct {
-	UserRepo repositories.UserRepository
+	UserService services.UserService
 }
 
-func NewUserController(userRepo repositories.UserRepository) UserController {
+func NewUserController(userService services.UserService) UserController {
 	return &UserControllerImpl{
-		UserRepo: userRepo,
+		UserService: userService,
 	}
 }
 
@@ -33,15 +34,12 @@ func (uc *UserControllerImpl) SetCurrentPaymentMethod(c *gin.Context) {
 	user := c.MustGet("user").(*models.User)
 	paymentMethodID := c.Param("paymentMethodId")
 
-	// 更新用户的支付方法 ID
-	user.PaymentMethodID = paymentMethodID
+	updatedUser, err := uc.UserService.SetCurrentPaymentMethod(user, &paymentMethodID)
 
-	// 保存更新后的用户
-	err := uc.UserRepo.Save(user)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, user)
+	c.JSON(http.StatusOK, updatedUser)
 }

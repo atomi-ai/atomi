@@ -9,7 +9,7 @@ import (
 type UserRepository interface {
 	FindByEmail(email string) (*models.User, error)
 	GetByID(userID uint64) (*models.User, error)
-	Save(user *models.User) error
+	Save(user *models.User) (*models.User, error)
 }
 
 type userRepositoryImpl struct {
@@ -32,8 +32,8 @@ func (repo *userRepositoryImpl) GetByID(userID uint64) (*models.User, error) {
 	return &user, err
 }
 
-func (r *userRepositoryImpl) Save(user *models.User) error {
-	return r.db.Clauses(clause.OnConflict{
+func (r *userRepositoryImpl) Save(user *models.User) (*models.User, error) {
+	return user, r.db.Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "email"}},
 		DoUpdates: clause.AssignmentColumns([]string{"id", "role", "phone", "name", "default_shipping_address_id", "default_billing_address_id", "stripe_customer_id", "payment_method_id"}),
 	}).Save(user).Error

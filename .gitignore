@@ -30,3 +30,4 @@ vendor
 # Key related files
 .config/firebase-secret-20230317.json
 .config/production.yaml
+.config/testing-local.yaml
