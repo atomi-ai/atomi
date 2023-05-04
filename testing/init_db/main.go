@@ -3,15 +3,14 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/atomi-ai/atomi/utils"
 	"os"
 
-	firebase "firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/auth"
 	"github.com/atomi-ai/atomi/models"
 	"github.com/atomi-ai/atomi/repositories"
 	"github.com/atomi-ai/atomi/services"
 	"github.com/spf13/viper"
-	"google.golang.org/api/option"
 )
 
 const (
@@ -38,8 +37,18 @@ func LoadConfig() {
 }
 
 func main() {
+	// App system initialization
 	LoadConfig()
 	db := models.InitDB()
+	utils.InitStripe(viper.GetString("stripeKey"))
+	firebaseApp := utils.InitFirebase()
+
+	// Create an auth client.
+	authClient, err := firebaseApp.Auth(context.Background())
+	if err != nil {
+		fmt.Println("error initializing auth client:", err)
+		os.Exit(1)
+	}
 
 	testEnvSetup := &TestEnvSetup{
 		ConfigRepository:    repositories.NewConfigRepository(db),
@@ -48,22 +57,6 @@ func main() {
 		StoreRepository:     repositories.NewStoreRepository(db),
 		UserRepository:      repositories.NewUserRepository(db),
 	}
-
-	// Initialize Firebase app, set your Firebase local emulator URL for testing.
-	os.Setenv("FIREBASE_AUTH_EMULATOR_HOST", "localhost:9099")
-	opt := option.WithCredentialsFile(viper.GetString("firebaseCredentialsFile"))
-	firebaseApp, err := firebase.NewApp(context.Background(), nil, opt)
-	if err != nil {
-		fmt.Println("error initializing firebase app:", err)
-		os.Exit(1)
-	}
-
-	authClient, err := firebaseApp.Auth(context.Background())
-	if err != nil {
-		fmt.Println("error initializing auth client:", err)
-		os.Exit(1)
-	}
-
 	testEnvSetup.run(authClient)
 }
 

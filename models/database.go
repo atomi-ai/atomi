@@ -24,6 +24,12 @@ func autoMigrate(db *gorm.DB, entities ...interface{}) {
 	}
 }
 
+func AutoMigrate(db *gorm.DB) {
+	autoMigrate(db, &Config{}, &User{}, &Product{}, &Store{}, &ProductStore{},
+		&UserStore{}, &UserAddress{}, &Order{}, &OrderItem{})
+
+}
+
 func InitDB() *gorm.DB {
 	enableCustomTls := viper.GetBool("enableCustomTls")
 	if enableCustomTls {
@@ -45,7 +51,6 @@ func InitDB() *gorm.DB {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer sqlDb.Close()
 
 	// Pass sql.DB instance to GORM
 	db, err := gorm.Open(mysql.New(mysql.Config{
@@ -55,9 +60,6 @@ func InitDB() *gorm.DB {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-
-	autoMigrate(db, &Config{}, &User{}, &Product{}, &Store{}, &ProductStore{},
-		&UserStore{}, &UserAddress{}, &Order{}, &OrderItem{})
 
 	return db
 }
