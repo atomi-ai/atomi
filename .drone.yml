@@ -4,6 +4,17 @@ type: kubernetes
 name: build-and-publish
 
 steps:
+- name: trigger-grocery-tests
+  image: drone/cli:1.4.0-alpine
+  environment:
+    DRONE_SERVER: ${DRONE_SYSTEM_PROTO}://${DRONE_SYSTEM_HOST}
+    DRONE_TOKEN:
+      from_secret: ATOMI_DRONE_TOKEN
+  commands:
+    - build_number=$(drone build last atomi-ai/grocery --branch master | grep "Number:" | awk '{print $2}')
+    - drone build promote atomi-ai/grocery $build_number production
+  depends_on:
+    - clone
 
 - name: docker-build-and-publish
   image: plugins/docker
