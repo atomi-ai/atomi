@@ -4,28 +4,6 @@ type: kubernetes
 name: build-and-publish
 
 steps:
-- name: go-build
-  image: golang:1.20
-  commands:
-    - go mod download
-    - go install github.com/atomi-ai/atomi/...
-  environment:
-    GO111MODULE: on
-  when:
-    event:
-      - push
-
-- name: trigger-grocery-tests
-  image: drone/cli:1.4.0-alpine
-  environment:
-    DRONE_SERVER: ${DRONE_SYSTEM_PROTO}://${DRONE_SYSTEM_HOST}
-    DRONE_TOKEN:
-      from_secret: ATOMI_DRONE_TOKEN
-  commands:
-    - build_number=$(drone build last atomi-ai/grocery --branch master | grep "Number:" | awk '{print $2}')
-    - drone build promote atomi-ai/grocery $build_number production
-  depends_on:
-    - clone
 
 - name: docker-build-and-publish
   image: plugins/docker
@@ -42,3 +20,43 @@ steps:
     event:
     - push
 
+---
+kind: pipeline
+type: kubernetes
+name: code-quality
+
+steps:
+  - name: test-and-coverage
+    image: golang:1.20
+    commands:
+      - go mod download
+      - go test ./... -v -cover -coverprofile cover.out
+      - mkdir ${DRONE_REPO_OWNER}-${DRONE_REPO_NAME}-${DRONE_COMMIT_SHA:0:7}
+      - go tool cover -html=cover.out -o ${DRONE_REPO_OWNER}-${DRONE_REPO_NAME}-${DRONE_COMMIT_SHA:0:7}/coverage.html
+
+  - name: lint
+    image: golangci/golangci-lint:v1.42
+    commands:
+      - golangci-lint run -v --timeout 5m --issues-exit-code=0 --out-format=html > ${DRONE_REPO_OWNER}-${DRONE_REPO_NAME}-${DRONE_COMMIT_SHA:0:7}/lint.html
+    when:
+      event: push
+    depends_on:
+      - test-and-coverage
+
+  - name: upload-to-azure
+    image: peterdavehello/azcopy
+    environment:
+      AZURE_SAS_TOKEN:
+        from_secret: AZURE_SAS_TOKEN
+    commands:
+      - env
+      - ./scripts/upload_to_azure.sh
+    when:
+      event: push
+    depends_on:
+      - lint
+
+  - name: hello-world-card
+    image: adminatomi/atomi-drone-plugin:20230503_2054
+    depends_on:
+      - upload-to-azure
