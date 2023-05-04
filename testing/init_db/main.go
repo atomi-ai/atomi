@@ -33,7 +33,7 @@ func LoadConfig() {
 
 	err := viper.ReadInConfig()
 	if err != nil {
-		fmt.Println("Error reading config file: %s", err)
+		fmt.Printf("Error reading config file: %v\n", err)
 	}
 }
 
