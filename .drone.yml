@@ -21,7 +21,7 @@ steps:
   settings:
     repo: adminatomi/server
     tags:
-      - "${DRONE_BRANCH}-${DRONE_COMMIT_SHA:0:7}"
+      - "${DRONE_REPO_OWNER}-${DRONE_BRANCH}-${DRONE_COMMIT_SHA:0:7}"
     dockerfile: Dockerfile
     username: adminatomi
     password:
