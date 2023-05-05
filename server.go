@@ -71,6 +71,13 @@ func main() {
 	orderController := controllers.NewOrderController(OrderService)
 
 	r := gin.Default()
+
+	r.GET("/api/health", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"message": "OK",
+		})
+	})
+
 	r.Use(AuthMiddleware())
 	r.Use(middlewares.RequestResponseLogger()) // 添加自定义的请求/响应日志中间件
 	r.GET("/api/login", Login)
