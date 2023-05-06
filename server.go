@@ -3,9 +3,8 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
-	"log"
-	"os"
+	"github.com/atomi-ai/atomi/utils"
+	log "github.com/sirupsen/logrus"
 	"strings"
 
 	"firebase.google.com/go/v4/auth"
@@ -16,7 +15,6 @@ import (
 	"github.com/atomi-ai/atomi/services"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
-	"google.golang.org/api/option"
 	"gorm.io/gorm"
 
 	firebase "firebase.google.com/go/v4"
@@ -45,40 +43,13 @@ var (
 	err error
 )
 
-func initStripe(key string) {
-	stripe.Key = key
-}
-
-func LoadConfig() {
-	configFile := os.Getenv("CONFIG_FILE")
-	log.Printf("Load config from file: %v", configFile)
-	viper.SetConfigFile(configFile)
-
-	err := viper.ReadInConfig()
-	if err != nil {
-		log.Fatalf("Error reading config file: %s", err)
-	}
-}
-
-func initFirebase() {
-	// Initialize Firebase app, set your Firebase local emulator URL for testing.
-	if viper.GetBool("firebaseEnableEmulator") {
-		os.Setenv("FIREBASE_AUTH_EMULATOR_HOST", viper.GetString("firebaseAuthEmulatorHost"))
-	}
-	opt := option.WithCredentialsFile(viper.GetString("firebaseCredentialsFile"))
-	firebaseApp, err = firebase.NewApp(context.Background(), nil, opt)
-	if err != nil {
-		fmt.Println("error initializing firebase app:", err)
-		os.Exit(1)
-	}
-}
-
 func main() {
-	LoadConfig()
+	utils.LoadConfig()
 
 	db = models.InitDB()
-	initStripe(viper.GetString("stripeKey"))
-	initFirebase()
+	models.AutoMigrate(db)
+	utils.InitStripe(viper.GetString("stripeKey"))
+	firebaseApp = utils.InitFirebase()
 
 	UserRepository = repositories.NewUserRepository(db)
 	StoreRepository = repositories.NewStoreRepository(db)
@@ -101,6 +72,13 @@ func main() {
 	orderController := controllers.NewOrderController(OrderService)
 
 	r := gin.Default()
+
+	r.GET("/api/health", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"message": "OK",
+		})
+	})
+
 	r.Use(AuthMiddleware())
 	r.Use(middlewares.RequestResponseLogger()) // 添加自定义的请求/响应日志中间件
 	r.GET("/api/login", Login)
@@ -145,6 +123,7 @@ func main() {
 
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		log.Debugf("Auth: 0")
 		authHeader := c.Request.Header.Get("Authorization")
 		if authHeader == "" {
 			c.AbortWithStatusJSON(401, gin.H{"error": "Authorization header is required"})
@@ -152,6 +131,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		}
 
 		idToken := strings.TrimPrefix(authHeader, "Bearer ")
+		log.Debugf("Auth: token: %v", idToken)
 		ctx := context.Background()
 		client, err := firebaseApp.Auth(ctx)
 		if err != nil {
@@ -165,13 +145,15 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
+		log.Debugf("Auth: decodedToken: %v", decodedToken)
 		email := decodedToken.Claims["email"].(string)
 		user, err := UserRepository.FindByEmail(email)
 		if err == nil {
 			c.Set("user", user)
 		}
-		c.Set("decodedToken", decodedToken)
+		log.Debugf("Auth: user: %v", user)
 
+		c.Set("decodedToken", decodedToken)
 		c.Next()
 	}
 }
