@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/atomi-ai/atomi/utils"
+	log "github.com/sirupsen/logrus"
 	"strings"
 
 	"firebase.google.com/go/v4/auth"
@@ -48,7 +49,7 @@ func main() {
 	db = models.InitDB()
 	models.AutoMigrate(db)
 	utils.InitStripe(viper.GetString("stripeKey"))
-	utils.InitFirebase()
+	firebaseApp = utils.InitFirebase()
 
 	UserRepository = repositories.NewUserRepository(db)
 	StoreRepository = repositories.NewStoreRepository(db)
@@ -122,6 +123,7 @@ func main() {
 
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		log.Debugf("Auth: 0")
 		authHeader := c.Request.Header.Get("Authorization")
 		if authHeader == "" {
 			c.AbortWithStatusJSON(401, gin.H{"error": "Authorization header is required"})
@@ -129,6 +131,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		}
 
 		idToken := strings.TrimPrefix(authHeader, "Bearer ")
+		log.Debugf("Auth: token: %v", idToken)
 		ctx := context.Background()
 		client, err := firebaseApp.Auth(ctx)
 		if err != nil {
@@ -142,13 +145,15 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
+		log.Debugf("Auth: decodedToken: %v", decodedToken)
 		email := decodedToken.Claims["email"].(string)
 		user, err := UserRepository.FindByEmail(email)
 		if err == nil {
 			c.Set("user", user)
 		}
-		c.Set("decodedToken", decodedToken)
+		log.Debugf("Auth: user: %v", user)
 
+		c.Set("decodedToken", decodedToken)
 		c.Next()
 	}
 }

@@ -11,8 +11,8 @@ steps:
     DRONE_TOKEN:
       from_secret: ATOMI_DRONE_TOKEN
   commands:
-    - build_number=$(drone build last atomi-ai/grocery --branch master | grep "Number:" | awk '{print $2}')
-    - drone build promote atomi-ai/grocery $build_number production
+    - build_number=$(drone build last ${DRONE_REPO_OWNER}/grocery --branch master | grep "Number:" | awk '{print $2}')
+    - drone build promote ${DRONE_REPO_OWNER}/grocery $build_number production
   depends_on:
     - clone
 

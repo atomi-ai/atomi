@@ -16,7 +16,7 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-func autoMigrate(db *gorm.DB, entities ...interface{}) {
+func autoMigrateTables(db *gorm.DB, entities ...interface{}) {
 	for _, entity := range entities {
 		if err := db.AutoMigrate(entity); err != nil {
 			panic("AutoMigrate error:" + err.Error())
@@ -25,9 +25,8 @@ func autoMigrate(db *gorm.DB, entities ...interface{}) {
 }
 
 func AutoMigrate(db *gorm.DB) {
-	autoMigrate(db, &Config{}, &User{}, &Product{}, &Store{}, &ProductStore{},
+	autoMigrateTables(db, &Config{}, &User{}, &Product{}, &Store{}, &ProductStore{},
 		&UserStore{}, &UserAddress{}, &Order{}, &OrderItem{})
-
 }
 
 func InitDB() *gorm.DB {

@@ -40,6 +40,7 @@ func main() {
 	// App system initialization
 	LoadConfig()
 	db := models.InitDB()
+	models.AutoMigrate(db)
 	utils.InitStripe(viper.GetString("stripeKey"))
 	firebaseApp := utils.InitFirebase()
 
