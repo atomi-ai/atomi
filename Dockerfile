@@ -7,7 +7,8 @@ RUN go mod download
 
 COPY . .
 
-RUN go mod vendor
+RUN go mod download
+RUN go generate ./...
 RUN go build -o atomi github.com/atomi-ai/atomi
 
 FROM golang:1.20

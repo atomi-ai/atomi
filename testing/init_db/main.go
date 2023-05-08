@@ -37,12 +37,13 @@ func LoadConfig() {
 }
 
 func main() {
+	// TODO(lamuguo): Please wire to inject.
 	// App system initialization
 	LoadConfig()
 	db := models.InitDB()
 	models.AutoMigrate(db)
 	utils.InitStripe(viper.GetString("stripeKey"))
-	firebaseApp := utils.InitFirebase()
+	firebaseApp := utils.FirebaseAppProvider()
 
 	// Create an auth client.
 	authClient, err := firebaseApp.Auth(context.Background())
