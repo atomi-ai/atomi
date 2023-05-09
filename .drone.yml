@@ -37,7 +37,7 @@ steps:
     commands:
       - go mod download
       - go generate ./...
-      - go test ./... -v -cover -coverprofile cover.out
+      - go test -v ./tests/... -coverpkg=./... -coverprofile=cover.out
       - mkdir ${DRONE_REPO_OWNER}-${DRONE_REPO_NAME}-${DRONE_COMMIT_SHA:0:7}
       - go tool cover -html=cover.out -o ${DRONE_REPO_OWNER}-${DRONE_REPO_NAME}-${DRONE_COMMIT_SHA:0:7}/coverage.html
 
