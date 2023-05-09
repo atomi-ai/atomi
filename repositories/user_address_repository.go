@@ -1,6 +1,8 @@
 package repositories
 
 import (
+	"errors"
+
 	"github.com/atomi-ai/atomi/models"
 	"gorm.io/gorm"
 )
@@ -37,7 +39,7 @@ func (uar *userAddressRepository) FindByUserIDAndAddressID(userID, addressID int
 	var userAddress models.UserAddress
 	err := uar.db.Where("user_id = ? AND address_id = ?", userID, addressID).First(&userAddress).Error
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
 		return nil, err

@@ -2,11 +2,13 @@ package controllers
 
 import (
 	"errors"
+
 	"firebase.google.com/go/v4/auth"
 	"github.com/atomi-ai/atomi/models"
 	"github.com/atomi-ai/atomi/repositories"
 	"github.com/atomi-ai/atomi/utils"
 	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
 	"github.com/stripe/stripe-go/v74"
 	"gorm.io/gorm"
 )
@@ -56,7 +58,9 @@ func (l *LoginControllerImpl) Login(c *gin.Context) {
 	}
 
 	if dirty {
-		l.UserRepository.Save(user)
+		if user, err = l.UserRepository.Save(user); err != nil {
+			log.Errorf("Errors in saving user %v, err: \n%v", user, err)
+		}
 	}
 
 	c.JSON(200, user)

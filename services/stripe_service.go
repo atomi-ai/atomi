@@ -13,11 +13,11 @@ import (
 
 type StripeService interface {
 	CreateStripeCustomer(email string) (string, error)
-	AttachPaymentMethodToCustomer(stripeCustomerId, paymentMethodId string) (*stripe.PaymentMethod, error)
-	DeletePaymentMethod(paymentMethodId string) (*stripe.PaymentMethod, error)
-	ListPaymentMethods(stripeCustomerId string) (*paymentmethod.Iter, error)
+	AttachPaymentMethodToCustomer(stripeCustomerID, paymentMethodID string) (*stripe.PaymentMethod, error)
+	DeletePaymentMethod(paymentMethodID string) (*stripe.PaymentMethod, error)
+	ListPaymentMethods(stripeCustomerID string) (*paymentmethod.Iter, error)
 	CreatePaymentIntent(user *models.User, piRequest *models.PaymentIntentRequest, shippingAddr *models.Address) (*stripe.PaymentIntent, error)
-	GetLatestCustomerIdByEmail(email string) (string, error)
+	GetLatestCustomerIDByEmail(email string) (string, error)
 	ListPaymentIntents(stripeCustomerID string) (*paymentintent.Iter, error)
 	RetrievePaymentIntent(intent string) (*stripe.PaymentIntent, error)
 }
@@ -43,24 +43,24 @@ func (s *StripeServiceImpl) CreateStripeCustomer(email string) (string, error) {
 	return c.ID, nil
 }
 
-func (s *StripeServiceImpl) AttachPaymentMethodToCustomer(stripeCustomerId, paymentMethodId string) (*stripe.PaymentMethod, error) {
+func (s *StripeServiceImpl) AttachPaymentMethodToCustomer(stripeCustomerID, paymentMethodID string) (*stripe.PaymentMethod, error) {
 	params := &stripe.PaymentMethodAttachParams{
-		Customer: stripe.String(stripeCustomerId),
+		Customer: stripe.String(stripeCustomerID),
 	}
-	updatedPaymentMethod, err := paymentmethod.Attach(paymentMethodId, params)
+	updatedPaymentMethod, err := paymentmethod.Attach(paymentMethodID, params)
 	if err != nil {
 		return nil, err
 	}
 	return updatedPaymentMethod, nil
 }
 
-func (s *StripeServiceImpl) DeletePaymentMethod(paymentMethodId string) (*stripe.PaymentMethod, error) {
-	return paymentmethod.Detach(paymentMethodId, nil)
+func (s *StripeServiceImpl) DeletePaymentMethod(paymentMethodID string) (*stripe.PaymentMethod, error) {
+	return paymentmethod.Detach(paymentMethodID, nil)
 }
 
-func (s *StripeServiceImpl) ListPaymentMethods(stripeCustomerId string) (*paymentmethod.Iter, error) {
+func (s *StripeServiceImpl) ListPaymentMethods(stripeCustomerID string) (*paymentmethod.Iter, error) {
 	params := &stripe.PaymentMethodListParams{
-		Customer: stripe.String(stripeCustomerId),
+		Customer: stripe.String(stripeCustomerID),
 		Type:     stripe.String("card"),
 	}
 	return paymentmethod.List(params), nil
@@ -93,7 +93,7 @@ func (s *StripeServiceImpl) CreatePaymentIntent(user *models.User, piRequest *mo
 	return paymentintent.New(params)
 }
 
-func (s *StripeServiceImpl) GetLatestCustomerIdByEmail(email string) (string, error) {
+func (s *StripeServiceImpl) GetLatestCustomerIDByEmail(email string) (string, error) {
 	params := &stripe.CustomerListParams{
 		Email: stripe.String(email),
 	}

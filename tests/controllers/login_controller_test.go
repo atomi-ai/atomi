@@ -1,13 +1,14 @@
 package controllers
 
 import (
-	"firebase.google.com/go/v4/auth"
-	"github.com/atomi-ai/atomi/app"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"firebase.google.com/go/v4/auth"
+	"github.com/atomi-ai/atomi/app"
+	"github.com/gin-gonic/gin"
 )
 
 func setup() (*app.Application, error) {

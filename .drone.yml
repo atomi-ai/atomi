@@ -44,7 +44,7 @@ steps:
   - name: lint
     image: golangci/golangci-lint:v1.42
     commands:
-      - golangci-lint run -v --timeout 5m --issues-exit-code=0 --out-format=html > ${DRONE_REPO_OWNER}-${DRONE_REPO_NAME}-${DRONE_COMMIT_SHA:0:7}/lint.html
+      - golangci-lint run -v --timeout 5m --out-format=html > ${DRONE_REPO_OWNER}-${DRONE_REPO_NAME}-${DRONE_COMMIT_SHA:0:7}/lint.html
     depends_on:
       - test-and-coverage
 

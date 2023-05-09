@@ -5,9 +5,10 @@ import (
 	"crypto/x509"
 	"database/sql"
 	"fmt"
-	"github.com/go-sql-driver/mysql"
 	"io/ioutil"
 	"log"
+
+	"github.com/go-sql-driver/mysql"
 
 	_ "github.com/go-sql-driver/mysql"
 )

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+
 	"github.com/atomi-ai/atomi/models"
 	"github.com/atomi-ai/atomi/repositories"
 )

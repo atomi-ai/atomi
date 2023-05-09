@@ -24,7 +24,7 @@ func NewUserController(userService services.UserService) UserController {
 	}
 }
 
-func (sc *UserControllerImpl) GetUser(c *gin.Context) {
+func (uc *UserControllerImpl) GetUser(c *gin.Context) {
 	user := c.MustGet("user").(*models.User)
 
 	c.JSON(http.StatusOK, user)
