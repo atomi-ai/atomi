@@ -1,7 +1,6 @@
 package main
 
 import (
-	firebase "firebase.google.com/go/v4"
 	application "github.com/atomi-ai/atomi/app"
 	"github.com/atomi-ai/atomi/middlewares"
 	"github.com/atomi-ai/atomi/models"
@@ -9,11 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-)
-
-var (
-	firebaseApp *firebase.App
-	app         *application.Application
 )
 
 func main() {
@@ -74,5 +68,7 @@ func main() {
 	r.POST("/api/order", app.OrderController.AddOrderForUser)
 
 	// APIs below are not tested by flutter tests yet.
-	r.Run(":8081")
+	if err = r.Run(":8081"); err != nil {
+		log.Fatal("Errors in running application on port 8081", err)
+	}
 }

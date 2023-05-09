@@ -1,12 +1,13 @@
 package controllers
 
 import (
+	"net/http"
+	"strconv"
+
 	"github.com/atomi-ai/atomi/models"
 	"github.com/atomi-ai/atomi/repositories"
 	"github.com/atomi-ai/atomi/services"
 	"github.com/gin-gonic/gin"
-	"net/http"
-	"strconv"
 )
 
 type AddressController interface {
@@ -37,7 +38,7 @@ func NewAddressControl(addressServoce services.AddressService, userService servi
 func (ac *AddressControllerImpl) GetAllAddressesForUser(c *gin.Context) {
 	user := c.MustGet("user").(*models.User)
 
-	addresses, err := ac.AddressService.GetAddressesByUserId(user.ID)
+	addresses, err := ac.AddressService.GetAddressesByUserID(user.ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -66,9 +67,9 @@ func (ac *AddressControllerImpl) AddAddressForUser(c *gin.Context) {
 
 func (ac *AddressControllerImpl) DeleteAddressForUser(c *gin.Context) {
 	user := c.MustGet("user").(*models.User)
-	addressId, _ := strconv.ParseInt(c.Param("addressId"), 10, 64)
+	addressID, _ := strconv.ParseInt(c.Param("addressId"), 10, 64)
 
-	err := ac.AddressService.DeleteAddressForUser(user, addressId)
+	err := ac.AddressService.DeleteAddressForUser(user, addressID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -79,9 +80,9 @@ func (ac *AddressControllerImpl) DeleteAddressForUser(c *gin.Context) {
 
 func (ac *AddressControllerImpl) SetDefaultShippingAddress(c *gin.Context) {
 	user := c.MustGet("user").(*models.User)
-	addressId, _ := strconv.ParseInt(c.Param("addressId"), 10, 64)
+	addressID, _ := strconv.ParseInt(c.Param("addressId"), 10, 64)
 
-	updatedUser, err := ac.UserService.SetDefaultShippingAddress(user, addressId)
+	updatedUser, err := ac.UserService.SetDefaultShippingAddress(user, addressID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -92,9 +93,9 @@ func (ac *AddressControllerImpl) SetDefaultShippingAddress(c *gin.Context) {
 
 func (ac *AddressControllerImpl) SetDefaultBillingAddress(c *gin.Context) {
 	user := c.MustGet("user").(*models.User)
-	addressId, _ := strconv.ParseInt(c.Param("addressId"), 10, 64)
+	addressID, _ := strconv.ParseInt(c.Param("addressId"), 10, 64)
 
-	updatedUser, err := ac.UserService.SetDefaultBillingAddress(user, addressId)
+	updatedUser, err := ac.UserService.SetDefaultBillingAddress(user, addressID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

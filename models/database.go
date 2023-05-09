@@ -5,11 +5,11 @@ import (
 	"crypto/x509"
 	"database/sql"
 	"fmt"
-	mysqlDriver "github.com/go-sql-driver/mysql"
-	"gorm.io/driver/mysql"
-	"io/ioutil"
 	"log"
 	"os"
+
+	mysqlDriver "github.com/go-sql-driver/mysql"
+	"gorm.io/driver/mysql"
 
 	"github.com/spf13/viper"
 	"gorm.io/gorm"
@@ -30,18 +30,23 @@ func AutoMigrate(db *gorm.DB) {
 }
 
 func InitDB() *gorm.DB {
-	enableCustomTls := viper.GetBool("enableCustomTls")
-	if enableCustomTls {
+	enableCustomTLS := viper.GetBool("enableCustomTLS")
+	if enableCustomTLS {
 		// Initialize connection string.
 		rootCertPool := x509.NewCertPool()
-		pem, err := ioutil.ReadFile(viper.GetString("pemPath"))
+		pem, err := os.ReadFile(viper.GetString("pemPath"))
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal("Failed to read pem file", err)
 		}
 		if ok := rootCertPool.AppendCertsFromPEM(pem); !ok {
 			log.Fatal("Failed to append PEM.")
 		}
-		mysqlDriver.RegisterTLSConfig("custom", &tls.Config{RootCAs: rootCertPool})
+		if err = mysqlDriver.RegisterTLSConfig("custom", &tls.Config{
+			RootCAs:    rootCertPool,
+			MinVersion: tls.VersionTLS12,
+		}); err != nil {
+			log.Fatal("Failed to register TLS config", err)
+		}
 	}
 	dsn := viper.GetString("dsn")
 

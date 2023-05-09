@@ -5,12 +5,13 @@ import (
 	"crypto/x509"
 	"database/sql"
 	"fmt"
+	"io/ioutil"
+	"log"
+
 	"github.com/atomi-ai/atomi/models"
 	mysqlDriver "github.com/go-sql-driver/mysql"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	"io/ioutil"
-	"log"
 )
 
 const (

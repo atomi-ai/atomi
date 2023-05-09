@@ -2,10 +2,11 @@ package utils
 
 import (
 	"fmt"
-	"github.com/spf13/viper"
-	"github.com/stripe/stripe-go/v74"
 	"log"
 	"os"
+
+	"github.com/spf13/viper"
+	"github.com/stripe/stripe-go/v74"
 )
 
 func InitStripe(key string) {

@@ -2,12 +2,13 @@ package utils
 
 import (
 	"context"
+	"fmt"
+	"os"
+
 	firebase "firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/auth"
-	"fmt"
 	"github.com/spf13/viper"
 	"google.golang.org/api/option"
-	"os"
 )
 
 type FirebaseAppWrapper interface {

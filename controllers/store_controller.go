@@ -33,14 +33,14 @@ func NewStoreController(psRepo repositories.ProductStoreRepository, storeRep rep
 	}
 }
 
-func (ctrl *StoreControllerImpl) GetDefaultStore(c *gin.Context) {
+func (sc *StoreControllerImpl) GetDefaultStore(c *gin.Context) {
 	userID, err := getUserIDFromContext(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	userStore, err := ctrl.UserStoreRepo.FindDefaultUserStore(userID)
+	userStore, err := sc.UserStoreRepo.FindDefaultUserStore(userID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Default store not found"})
 		return
@@ -49,7 +49,7 @@ func (ctrl *StoreControllerImpl) GetDefaultStore(c *gin.Context) {
 	c.JSON(http.StatusOK, userStore.Store)
 }
 
-func (ctrl *StoreControllerImpl) SetDefaultStore(c *gin.Context) {
+func (sc *StoreControllerImpl) SetDefaultStore(c *gin.Context) {
 	userID, err := getUserIDFromContext(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -62,16 +62,16 @@ func (ctrl *StoreControllerImpl) SetDefaultStore(c *gin.Context) {
 		return
 	}
 
-	store, err := ctrl.StoreRepo.FindByID(storeID)
+	store, err := sc.StoreRepo.FindByID(storeID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Store not found"})
 		return
 	}
 
-	userStore, err := ctrl.UserStoreRepo.FindDefaultUserStore(userID)
+	userStore, err := sc.UserStoreRepo.FindDefaultUserStore(userID)
 	if err == nil {
 		userStore.IsEnable = false
-		_ = ctrl.UserStoreRepo.Save(userStore)
+		_ = sc.UserStoreRepo.Save(userStore)
 	}
 
 	newUserStore := &models.UserStore{
@@ -80,7 +80,7 @@ func (ctrl *StoreControllerImpl) SetDefaultStore(c *gin.Context) {
 		IsEnable: true,
 	}
 
-	err = ctrl.UserStoreRepo.Save(newUserStore)
+	err = sc.UserStoreRepo.Save(newUserStore)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error setting default store"})
 		return
@@ -89,8 +89,8 @@ func (ctrl *StoreControllerImpl) SetDefaultStore(c *gin.Context) {
 	c.JSON(http.StatusOK, store)
 }
 
-func (ctrl *StoreControllerImpl) GetAllStores(c *gin.Context) {
-	stores, err := ctrl.StoreRepo.FindAll()
+func (sc *StoreControllerImpl) GetAllStores(c *gin.Context) {
+	stores, err := sc.StoreRepo.FindAll()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error retrieving all stores"})
 		return

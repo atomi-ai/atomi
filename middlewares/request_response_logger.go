@@ -3,11 +3,12 @@ package middlewares
 import (
 	"bytes"
 	"fmt"
-	"github.com/atomi-ai/atomi/models"
-	"github.com/gin-gonic/gin"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
+
+	"github.com/atomi-ai/atomi/models"
+	"github.com/gin-gonic/gin"
 )
 
 func RequestResponseLogger() gin.HandlerFunc {
@@ -25,7 +26,7 @@ func RequestResponseLogger() gin.HandlerFunc {
 
 		// 请求
 		reqBody, _ := c.GetRawData()
-		c.Request.Body = ioutil.NopCloser(bytes.NewBuffer(reqBody)) // 把读过的body再放回去
+		c.Request.Body = io.NopCloser(bytes.NewBuffer(reqBody)) // 把读过的body再放回去
 		fmt.Printf("\n[%s] (%v, %v) Request: %s %s\nHeaders: %v\nBody: %s\n",
 			time.Now().Format(time.RFC3339),
 			user.ID, user.Email,

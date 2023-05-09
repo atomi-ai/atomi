@@ -6,7 +6,7 @@ import (
 )
 
 type AddressService interface {
-	GetAddressesByUserId(userID int64) ([]*models.Address, error)
+	GetAddressesByUserID(userID int64) ([]*models.Address, error)
 	AddAddressForUser(user *models.User, address *models.Address) (*models.Address, error)
 	DeleteAddressForUser(user *models.User, addressID int64) error
 	DeleteAllAddressesForUser(user *models.User) error
@@ -27,7 +27,7 @@ func NewAddressService(userRepo repositories.UserRepository, addressRepo reposit
 	}
 }
 
-func (as *addressServiceImpl) GetAddressesByUserId(userID int64) ([]*models.Address, error) {
+func (as *addressServiceImpl) GetAddressesByUserID(userID int64) ([]*models.Address, error) {
 	return as.UserAddressRepo.FindAddressesByUserID(userID)
 }
 

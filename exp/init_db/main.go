@@ -3,8 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/atomi-ai/atomi/utils"
 	"os"
+
+	"github.com/atomi-ai/atomi/utils"
 
 	"firebase.google.com/go/v4/auth"
 	"github.com/atomi-ai/atomi/models"
