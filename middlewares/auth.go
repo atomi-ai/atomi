@@ -2,8 +2,8 @@ package middlewares
 
 import (
 	"context"
-	firebase "firebase.google.com/go/v4"
 	"github.com/atomi-ai/atomi/repositories"
+	"github.com/atomi-ai/atomi/utils"
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 	"strings"
@@ -15,10 +15,10 @@ type AuthMiddleware interface {
 
 type authMiddlewareImpl struct {
 	UserRepository repositories.UserRepository
-	FirebaseApp    *firebase.App
+	FirebaseApp    utils.FirebaseAppWrapper
 }
 
-func NewAuthMiddleware(userRepository repositories.UserRepository, firebaseApp *firebase.App) AuthMiddleware {
+func NewAuthMiddleware(userRepository repositories.UserRepository, firebaseApp utils.FirebaseAppWrapper) AuthMiddleware {
 	return &authMiddlewareImpl{
 		UserRepository: userRepository,
 		FirebaseApp:    firebaseApp,

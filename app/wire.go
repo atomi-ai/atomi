@@ -1,10 +1,9 @@
 //go:build wireinject
 // +build wireinject
 
-package main
+package app
 
 import (
-	firebase "firebase.google.com/go/v4"
 	"github.com/atomi-ai/atomi/controllers"
 	"github.com/atomi-ai/atomi/middlewares"
 	"github.com/atomi-ai/atomi/repositories"
@@ -15,7 +14,8 @@ import (
 )
 
 type Application struct {
-	FirebaseApp    *firebase.App
+	FirebaseApp    utils.FirebaseAppWrapper
+	StripeWrapper  utils.StripeWrapper
 	AuthMiddleware middlewares.AuthMiddleware
 
 	AddressRepository      repositories.AddressRepository
@@ -40,9 +40,8 @@ type Application struct {
 	UserController    controllers.UserController
 }
 
-func InitializeApplication(db *gorm.DB) (*Application, error) {
+func InitializeApplication(db *gorm.DB, firebaseApp utils.FirebaseAppWrapper, stripeWrapper utils.StripeWrapper) (*Application, error) {
 	wire.Build(
-		utils.FirebaseAppProvider,
 		middlewares.NewAuthMiddleware,
 
 		repositories.NewUserRepository,

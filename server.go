@@ -2,6 +2,7 @@ package main
 
 import (
 	firebase "firebase.google.com/go/v4"
+	application "github.com/atomi-ai/atomi/app"
 	"github.com/atomi-ai/atomi/middlewares"
 	"github.com/atomi-ai/atomi/models"
 	"github.com/atomi-ai/atomi/utils"
@@ -12,7 +13,7 @@ import (
 
 var (
 	firebaseApp *firebase.App
-	app         *Application
+	app         *application.Application
 )
 
 func main() {
@@ -21,7 +22,7 @@ func main() {
 	models.AutoMigrate(db)
 	utils.InitStripe(viper.GetString("stripeKey"))
 
-	app, err := InitializeApplication(db)
+	app, err := application.InitializeApplication(db, utils.FirebaseAppProvider(), utils.NewStripeWrapper())
 	if err != nil {
 		log.Fatalf("Failed to initialize application: %v", err)
 	}

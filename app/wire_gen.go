@@ -4,10 +4,9 @@
 //go:build !wireinject
 // +build !wireinject
 
-package main
+package app
 
 import (
-	"firebase.google.com/go/v4"
 	"github.com/atomi-ai/atomi/controllers"
 	"github.com/atomi-ai/atomi/middlewares"
 	"github.com/atomi-ai/atomi/repositories"
@@ -18,10 +17,9 @@ import (
 
 // Injectors from wire.go:
 
-func InitializeApplication(db *gorm.DB) (*Application, error) {
-	app2 := utils.FirebaseAppProvider()
+func InitializeApplication(db *gorm.DB, firebaseApp utils.FirebaseAppWrapper, stripeWrapper utils.StripeWrapper) (*Application, error) {
 	userRepository := repositories.NewUserRepository(db)
-	authMiddleware := middlewares.NewAuthMiddleware(userRepository, app2)
+	authMiddleware := middlewares.NewAuthMiddleware(userRepository, firebaseApp)
 	addressRepository := repositories.NewAddressRepository(db)
 	orderRepository := repositories.NewOrderRepository(db)
 	orderItemRepository := repositories.NewOrderItemRepository(db)
@@ -34,13 +32,14 @@ func InitializeApplication(db *gorm.DB) (*Application, error) {
 	orderService := services.NewOrderService(orderRepository, orderItemRepository, stripeService)
 	userService := services.NewUserService(userRepository)
 	addressController := controllers.NewAddressControl(addressService, userService, addressRepository)
-	loginController := controllers.NewLoginController(userRepository)
+	loginController := controllers.NewLoginController(userRepository, stripeWrapper)
 	orderController := controllers.NewOrderController(orderService)
 	storeController := controllers.NewStoreController(productStoreRepository, storeRepository, userStoreRepository)
 	stripeController := controllers.NewStripeController(userService, stripeService, orderService, addressRepository)
 	userController := controllers.NewUserController(userService)
 	application := &Application{
-		FirebaseApp:            app2,
+		FirebaseApp:            firebaseApp,
+		StripeWrapper:          stripeWrapper,
 		AuthMiddleware:         authMiddleware,
 		AddressRepository:      addressRepository,
 		OrderRepository:        orderRepository,
@@ -67,7 +66,8 @@ func InitializeApplication(db *gorm.DB) (*Application, error) {
 // wire.go:
 
 type Application struct {
-	FirebaseApp    *firebase.App
+	FirebaseApp    utils.FirebaseAppWrapper
+	StripeWrapper  utils.StripeWrapper
 	AuthMiddleware middlewares.AuthMiddleware
 
 	AddressRepository      repositories.AddressRepository

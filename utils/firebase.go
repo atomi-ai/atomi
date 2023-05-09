@@ -3,11 +3,16 @@ package utils
 import (
 	"context"
 	firebase "firebase.google.com/go/v4"
+	"firebase.google.com/go/v4/auth"
 	"fmt"
 	"github.com/spf13/viper"
 	"google.golang.org/api/option"
 	"os"
 )
+
+type FirebaseAppWrapper interface {
+	Auth(ctx context.Context) (*auth.Client, error)
+}
 
 func FirebaseAppProvider() *firebase.App {
 	// Initialize Firebase app, set your Firebase local emulator URL for testing.

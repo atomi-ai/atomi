@@ -5,9 +5,9 @@ import (
 	"firebase.google.com/go/v4/auth"
 	"github.com/atomi-ai/atomi/models"
 	"github.com/atomi-ai/atomi/repositories"
+	"github.com/atomi-ai/atomi/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/stripe/stripe-go/v74"
-	"github.com/stripe/stripe-go/v74/customer"
 	"gorm.io/gorm"
 )
 
@@ -17,11 +17,13 @@ type LoginController interface {
 
 type LoginControllerImpl struct {
 	UserRepository repositories.UserRepository
+	StripeWrapper  utils.StripeWrapper
 }
 
-func NewLoginController(userRepo repositories.UserRepository) LoginController {
+func NewLoginController(userRepo repositories.UserRepository, wrapper utils.StripeWrapper) LoginController {
 	return &LoginControllerImpl{
 		UserRepository: userRepo,
+		StripeWrapper:  wrapper,
 	}
 }
 
@@ -45,7 +47,7 @@ func (l *LoginControllerImpl) Login(c *gin.Context) {
 	dirty := false
 	if user.StripeCustomerID == "" {
 		dirty = true
-		stripeCustomer, err := createStripeCustomer(email)
+		stripeCustomer, err := l.createStripeCustomer(email)
 		if err != nil {
 			c.JSON(500, gin.H{"error": "Error creating Stripe customer"})
 			return
@@ -60,10 +62,6 @@ func (l *LoginControllerImpl) Login(c *gin.Context) {
 	c.JSON(200, user)
 }
 
-func createStripeCustomer(email string) (*stripe.Customer, error) {
-	params := &stripe.CustomerParams{
-		Email: stripe.String(email),
-	}
-
-	return customer.New(params)
+func (l *LoginControllerImpl) createStripeCustomer(email string) (*stripe.Customer, error) {
+	return l.StripeWrapper.CreateCustomer(email)
 }
