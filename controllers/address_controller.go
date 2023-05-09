@@ -21,16 +21,16 @@ type AddressController interface {
 }
 
 type AddressControllerImpl struct {
+	AddressRepo    repositories.AddressRepository
 	AddressService services.AddressService
 	UserService    services.UserService
-	AddressRepo    repositories.AddressRepository
 }
 
 func NewAddressControl(addressServoce services.AddressService, userService services.UserService, addressRepo repositories.AddressRepository) AddressController {
 	return &AddressControllerImpl{
-		UserService:    userService,
 		AddressRepo:    addressRepo,
 		AddressService: addressServoce,
+		UserService:    userService,
 	}
 }
 

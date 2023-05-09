@@ -1,75 +1,31 @@
 package main
 
 import (
-	"context"
-	"errors"
-	"github.com/atomi-ai/atomi/utils"
-	log "github.com/sirupsen/logrus"
-	"strings"
-
-	"firebase.google.com/go/v4/auth"
-	"github.com/atomi-ai/atomi/controllers"
+	firebase "firebase.google.com/go/v4"
+	application "github.com/atomi-ai/atomi/app"
 	"github.com/atomi-ai/atomi/middlewares"
 	"github.com/atomi-ai/atomi/models"
-	"github.com/atomi-ai/atomi/repositories"
-	"github.com/atomi-ai/atomi/services"
+	"github.com/atomi-ai/atomi/utils"
 	"github.com/gin-gonic/gin"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"gorm.io/gorm"
-
-	firebase "firebase.google.com/go/v4"
-	"github.com/stripe/stripe-go/v74"
-	"github.com/stripe/stripe-go/v74/customer"
 )
 
 var (
-	db          *gorm.DB
 	firebaseApp *firebase.App
-
-	UserRepository         repositories.UserRepository
-	StoreRepository        repositories.StoreRepository
-	UserStoreRepository    repositories.UserStoreRepository
-	ProductStoreRepository repositories.ProductStoreRepository
-	AddressRepository      repositories.AddressRepository
-	UserAddressRepository  repositories.UserAddressRepository
-	OrderRepository        repositories.OrderRepository
-	OrderItemRepository    repositories.OrderItemRepository
-
-	UserService    services.UserService
-	StripeService  services.StripeService
-	AddressService services.AddressService
-	OrderService   services.OrderService
-
-	err error
+	app         *application.Application
 )
 
 func main() {
 	utils.LoadConfig()
-
-	db = models.InitDB()
+	db := models.InitDB()
 	models.AutoMigrate(db)
 	utils.InitStripe(viper.GetString("stripeKey"))
-	firebaseApp = utils.InitFirebase()
 
-	UserRepository = repositories.NewUserRepository(db)
-	StoreRepository = repositories.NewStoreRepository(db)
-	UserStoreRepository = repositories.NewUserStoreRepository(db)
-	ProductStoreRepository = repositories.NewProductStoreRepository(db)
-	AddressRepository = repositories.NewAddressRepository(db)
-	UserAddressRepository = repositories.NewUserAddressRepository(db)
-	OrderRepository = repositories.NewOrderRepository(db)
-	OrderItemRepository = repositories.NewOrderItemRepository(db)
-
-	AddressService = services.NewAddressService(UserRepository, AddressRepository, UserAddressRepository)
-	UserService = services.NewUserService(UserRepository)
-	StripeService = services.NewStripeService()
-	OrderService = services.NewOrderService(OrderRepository, OrderItemRepository, StripeService)
-
-	storeController := controllers.NewStoreController(ProductStoreRepository, StoreRepository, UserStoreRepository)
-	addressController := controllers.NewAddressControl(AddressService, UserService, AddressRepository)
-	stripeController := controllers.NewStripeController(UserService, StripeService, OrderService, AddressRepository)
-	userController := controllers.NewUserController(UserService)
-	orderController := controllers.NewOrderController(OrderService)
+	app, err := application.InitializeApplication(db, utils.FirebaseAppProvider(), utils.NewStripeWrapper())
+	if err != nil {
+		log.Fatalf("Failed to initialize application: %v", err)
+	}
 
 	r := gin.Default()
 
@@ -79,124 +35,44 @@ func main() {
 		})
 	})
 
-	r.Use(AuthMiddleware())
+	r.Use(app.AuthMiddleware.Handler())
 	r.Use(middlewares.RequestResponseLogger()) // 添加自定义的请求/响应日志中间件
-	r.GET("/api/login", Login)
+	r.GET("/api/login", app.LoginController.Login)
 
 	// Add StoreController endpoints here
-	r.GET("/api/default-store", storeController.GetDefaultStore)
-	r.PUT("/api/default-store/:store_id", storeController.SetDefaultStore)
-	r.GET("/api/stores", storeController.GetAllStores)
-	r.DELETE("/api/default-store", storeController.DeleteDefaultStore)
-	r.GET("/api/products/:store_id", storeController.GetProductsByStoreID)
+	r.GET("/api/default-store", app.StoreController.GetDefaultStore)
+	r.PUT("/api/default-store/:store_id", app.StoreController.SetDefaultStore)
+	r.GET("/api/stores", app.StoreController.GetAllStores)
+	r.DELETE("/api/default-store", app.StoreController.DeleteDefaultStore)
+	r.GET("/api/products/:store_id", app.StoreController.GetProductsByStoreID)
 
 	// Add AddressController endpoints here
-	r.GET("/api/addresses", addressController.GetAllAddressesForUser)
-	r.POST("/api/addresses", addressController.AddAddressForUser)
-	r.DELETE("/api/addresses/:addressId", addressController.DeleteAddressForUser)
-	r.POST("/api/addresses/shipping/:addressId", addressController.SetDefaultShippingAddress)
-	r.POST("/api/addresses/billing/:addressId", addressController.SetDefaultBillingAddress)
-	r.GET("/api/addresses/shipping", addressController.GetDefaultShippingAddress)
-	r.GET("/api/addresses/billing", addressController.GetDefaultBillingAddress)
-	r.DELETE("/api/addresses", addressController.DeleteAllAddressesForUser)
+	r.GET("/api/addresses", app.AddressController.GetAllAddressesForUser)
+	r.POST("/api/addresses", app.AddressController.AddAddressForUser)
+	r.DELETE("/api/addresses/:addressId", app.AddressController.DeleteAddressForUser)
+	r.POST("/api/addresses/shipping/:addressId", app.AddressController.SetDefaultShippingAddress)
+	r.POST("/api/addresses/billing/:addressId", app.AddressController.SetDefaultBillingAddress)
+	r.GET("/api/addresses/shipping", app.AddressController.GetDefaultShippingAddress)
+	r.GET("/api/addresses/billing", app.AddressController.GetDefaultBillingAddress)
+	r.DELETE("/api/addresses", app.AddressController.DeleteAllAddressesForUser)
 
 	// Add payment endpoints here.
-	r.PUT("/api/payment-methods/:paymentMethodId", stripeController.AttachPaymentMethodToCustomer)
-	r.GET("/api/payment-methods", stripeController.ListPaymentMethods)
-	r.DELETE("/api/payment-methods/:paymentMethodId", stripeController.DeletePaymentMethod)
-	r.POST("/api/pay", stripeController.Pay)
-	r.DELETE("/api/payment-methods", stripeController.DeleteAllPaymentMethods)
-	r.GET("/api/payment-intents", stripeController.ListPaymentIntents)
-	r.GET("/api/payment-intent/:paymentIntentId", stripeController.PaymentIntent)
+	r.PUT("/api/payment-methods/:paymentMethodId", app.StripeController.AttachPaymentMethodToCustomer)
+	r.GET("/api/payment-methods", app.StripeController.ListPaymentMethods)
+	r.DELETE("/api/payment-methods/:paymentMethodId", app.StripeController.DeletePaymentMethod)
+	r.POST("/api/pay", app.StripeController.Pay)
+	r.DELETE("/api/payment-methods", app.StripeController.DeleteAllPaymentMethods)
+	r.GET("/api/payment-intents", app.StripeController.ListPaymentIntents)
+	r.GET("/api/payment-intent/:paymentIntentId", app.StripeController.PaymentIntent)
 
 	// Add user endpoints here
-	r.GET("/api/user", userController.GetUser)
-	r.PUT("/api/user/current-payment-method/:paymentMethodId", userController.SetCurrentPaymentMethod)
+	r.GET("/api/user", app.UserController.GetUser)
+	r.PUT("/api/user/current-payment-method/:paymentMethodId", app.UserController.SetCurrentPaymentMethod)
 
 	// Add order endpoints here
-	r.GET("/api/orders", orderController.GetUserOrders)
-	r.POST("/api/order", orderController.AddOrderForUser)
+	r.GET("/api/orders", app.OrderController.GetUserOrders)
+	r.POST("/api/order", app.OrderController.AddOrderForUser)
 
 	// APIs below are not tested by flutter tests yet.
 	r.Run(":8081")
-}
-
-func AuthMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		log.Debugf("Auth: 0")
-		authHeader := c.Request.Header.Get("Authorization")
-		if authHeader == "" {
-			c.AbortWithStatusJSON(401, gin.H{"error": "Authorization header is required"})
-			return
-		}
-
-		idToken := strings.TrimPrefix(authHeader, "Bearer ")
-		log.Debugf("Auth: token: %v", idToken)
-		ctx := context.Background()
-		client, err := firebaseApp.Auth(ctx)
-		if err != nil {
-			c.AbortWithStatusJSON(500, gin.H{"error": "Error getting Auth client"})
-			return
-		}
-
-		decodedToken, err := client.VerifyIDToken(ctx, idToken)
-		if err != nil {
-			c.AbortWithStatusJSON(401, gin.H{"error": "Invalid token"})
-			return
-		}
-
-		log.Debugf("Auth: decodedToken: %v", decodedToken)
-		email := decodedToken.Claims["email"].(string)
-		user, err := UserRepository.FindByEmail(email)
-		if err == nil {
-			c.Set("user", user)
-		}
-		log.Debugf("Auth: user: %v", user)
-
-		c.Set("decodedToken", decodedToken)
-		c.Next()
-	}
-}
-
-func Login(c *gin.Context) {
-	token, _ := c.MustGet("decodedToken").(*auth.Token)
-
-	email, _ := token.Claims["email"].(string)
-	user, err := UserRepository.FindByEmail(email)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			user = &models.User{
-				Email: email,
-				Role:  "USER",
-			}
-		} else {
-			c.JSON(500, gin.H{"error": "Error fetching user"})
-			return
-		}
-	}
-
-	dirty := false
-	if user.StripeCustomerID == "" {
-		dirty = true
-		stripeCustomer, err := createStripeCustomer(email)
-		if err != nil {
-			c.JSON(500, gin.H{"error": "Error creating Stripe customer"})
-			return
-		}
-		user.StripeCustomerID = stripeCustomer.ID
-	}
-
-	if dirty {
-		UserRepository.Save(user)
-	}
-
-	c.JSON(200, user)
-}
-
-func createStripeCustomer(email string) (*stripe.Customer, error) {
-	params := &stripe.CustomerParams{
-		Email: stripe.String(email),
-	}
-
-	return customer.New(params)
 }

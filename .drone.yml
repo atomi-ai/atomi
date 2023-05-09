@@ -13,8 +13,6 @@ steps:
   commands:
     - build_number=$(drone build last ${DRONE_REPO_OWNER}/grocery --branch master | grep "Number:" | awk '{print $2}')
     - drone build promote ${DRONE_REPO_OWNER}/grocery $build_number production
-  depends_on:
-    - clone
 
 - name: docker-build-and-publish
   image: plugins/docker
@@ -27,9 +25,6 @@ steps:
     password:
       from_secret: DOCKER_PASSWORD
     context: .
-  when:
-    event:
-    - push
 
 ---
 kind: pipeline
@@ -41,7 +36,8 @@ steps:
     image: golang:1.20
     commands:
       - go mod download
-      - go test ./... -v -cover -coverprofile cover.out
+      - go generate ./...
+      - go test -v ./tests/... -coverpkg=./... -coverprofile=cover.out
       - mkdir ${DRONE_REPO_OWNER}-${DRONE_REPO_NAME}-${DRONE_COMMIT_SHA:0:7}
       - go tool cover -html=cover.out -o ${DRONE_REPO_OWNER}-${DRONE_REPO_NAME}-${DRONE_COMMIT_SHA:0:7}/coverage.html
 
@@ -49,8 +45,6 @@ steps:
     image: golangci/golangci-lint:v1.42
     commands:
       - golangci-lint run -v --timeout 5m --issues-exit-code=0 --out-format=html > ${DRONE_REPO_OWNER}-${DRONE_REPO_NAME}-${DRONE_COMMIT_SHA:0:7}/lint.html
-    when:
-      event: push
     depends_on:
       - test-and-coverage
 
@@ -62,8 +56,6 @@ steps:
     commands:
       - env
       - ./scripts/upload_to_azure.sh
-    when:
-      event: push
     depends_on:
       - lint
 
