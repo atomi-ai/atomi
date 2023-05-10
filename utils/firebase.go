@@ -5,14 +5,39 @@ import (
 	"fmt"
 	"os"
 
-	firebase "firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/auth"
+
+	firebase "firebase.google.com/go/v4"
 	"github.com/spf13/viper"
 	"google.golang.org/api/option"
 )
 
-type FirebaseAppWrapper interface {
-	Auth(ctx context.Context) (*auth.Client, error)
+type AuthAppWrapper interface {
+	AuthAndDecode(ctx context.Context, token string) (*auth.Token, error)
+}
+
+type FirebaseAppWrapper struct {
+	FirebaseApp *firebase.App
+}
+
+func NewFirebaseAppWrapper(firebaseApp *firebase.App) AuthAppWrapper {
+	return &FirebaseAppWrapper{
+		FirebaseApp: firebaseApp,
+	}
+}
+
+func (w *FirebaseAppWrapper) AuthAndDecode(ctx context.Context, token string) (*auth.Token, error) {
+	client, err := w.FirebaseApp.Auth(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	decodedToken, err := client.VerifyIDToken(ctx, token)
+	if err != nil {
+		return nil, err
+	}
+
+	return decodedToken, nil
 }
 
 func FirebaseAppProvider() *firebase.App {

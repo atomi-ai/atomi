@@ -6,8 +6,8 @@ import (
 )
 
 type UserService interface {
-	SetDefaultShippingAddress(user *models.User, addressID int64) (error, error)
-	SetDefaultBillingAddress(user *models.User, addressID int64) (error, error)
+	SetDefaultShippingAddress(user *models.User, addressID int64) (*models.User, error)
+	SetDefaultBillingAddress(user *models.User, addressID int64) (*models.User, error)
 	SetCurrentPaymentMethod(user *models.User, paymentMethodID *string) (*models.User, error)
 }
 
@@ -21,16 +21,14 @@ func NewUserService(userRepo repositories.UserRepository) UserService {
 	}
 }
 
-func (us *userService) SetDefaultShippingAddress(user *models.User, addressID int64) (error, error) {
+func (us *userService) SetDefaultShippingAddress(user *models.User, addressID int64) (*models.User, error) {
 	user.DefaultShippingAddressID = addressID
-	_, err := us.UserRepo.Save(user)
-	return err, nil
+	return us.UserRepo.Save(user)
 }
 
-func (us *userService) SetDefaultBillingAddress(user *models.User, addressID int64) (error, error) {
+func (us *userService) SetDefaultBillingAddress(user *models.User, addressID int64) (*models.User, error) {
 	user.DefaultBillingAddressID = addressID
-	_, err := us.UserRepo.Save(user)
-	return err, nil
+	return us.UserRepo.Save(user)
 }
 
 func (us *userService) SetCurrentPaymentMethod(user *models.User, paymentMethodID *string) (*models.User, error) {

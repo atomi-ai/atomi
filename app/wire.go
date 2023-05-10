@@ -14,13 +14,14 @@ import (
 )
 
 type Application struct {
-	FirebaseApp    utils.FirebaseAppWrapper
+	AuthWrapper    utils.AuthAppWrapper
 	StripeWrapper  utils.StripeWrapper
 	AuthMiddleware middlewares.AuthMiddleware
 
 	AddressRepository      repositories.AddressRepository
 	OrderRepository        repositories.OrderRepository
 	OrderItemRepository    repositories.OrderItemRepository
+	ProductRepository      repositories.ProductRepository
 	ProductStoreRepository repositories.ProductStoreRepository
 	StoreRepository        repositories.StoreRepository
 	UserAddressRepository  repositories.UserAddressRepository
@@ -40,13 +41,14 @@ type Application struct {
 	UserController    controllers.UserController
 }
 
-func InitializeApplication(db *gorm.DB, firebaseApp utils.FirebaseAppWrapper, stripeWrapper utils.StripeWrapper) (*Application, error) {
+func InitializeApplication(db *gorm.DB, authWrapper utils.AuthAppWrapper, stripeWrapper utils.StripeWrapper) (*Application, error) {
 	wire.Build(
 		middlewares.NewAuthMiddleware,
 
 		repositories.NewUserRepository,
 		repositories.NewStoreRepository,
 		repositories.NewUserStoreRepository,
+		repositories.NewProductRepository,
 		repositories.NewProductStoreRepository,
 		repositories.NewAddressRepository,
 		repositories.NewUserAddressRepository,

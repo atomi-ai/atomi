@@ -16,13 +16,13 @@ type AuthMiddleware interface {
 
 type authMiddlewareImpl struct {
 	UserRepository repositories.UserRepository
-	FirebaseApp    utils.FirebaseAppWrapper
+	AuthWrapper    utils.AuthAppWrapper
 }
 
-func NewAuthMiddleware(userRepository repositories.UserRepository, firebaseApp utils.FirebaseAppWrapper) AuthMiddleware {
+func NewAuthMiddleware(userRepository repositories.UserRepository, authWrapper utils.AuthAppWrapper) AuthMiddleware {
 	return &authMiddlewareImpl{
 		UserRepository: userRepository,
-		FirebaseApp:    firebaseApp,
+		AuthWrapper:    authWrapper,
 	}
 }
 
@@ -38,15 +38,9 @@ func (a authMiddlewareImpl) Handler() gin.HandlerFunc {
 		idToken := strings.TrimPrefix(authHeader, "Bearer ")
 		log.Debugf("Auth: token: %v", idToken)
 		ctx := context.Background()
-		client, err := a.FirebaseApp.Auth(ctx)
+		decodedToken, err := a.AuthWrapper.AuthAndDecode(ctx, idToken)
 		if err != nil {
-			c.AbortWithStatusJSON(500, gin.H{"error": "Error getting Auth client"})
-			return
-		}
-
-		decodedToken, err := client.VerifyIDToken(ctx, idToken)
-		if err != nil {
-			c.AbortWithStatusJSON(401, gin.H{"error": "Invalid token"})
+			c.AbortWithStatusJSON(500, gin.H{"error": "Errors in authenticating/decoding the context"})
 			return
 		}
 

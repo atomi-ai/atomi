@@ -16,7 +16,7 @@ func main() {
 	models.AutoMigrate(db)
 	utils.InitStripe(viper.GetString("stripeKey"))
 
-	app, err := application.InitializeApplication(db, utils.FirebaseAppProvider(), utils.NewStripeWrapper())
+	app, err := application.InitializeApplication(db, utils.NewFirebaseAppWrapper(utils.FirebaseAppProvider()), utils.NewStripeWrapper())
 	if err != nil {
 		log.Fatalf("Failed to initialize application: %v", err)
 	}

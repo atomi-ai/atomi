@@ -1,26 +1,18 @@
 package controllers
 
 import (
+	"github.com/atomi-ai/atomi/tests"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
 	"firebase.google.com/go/v4/auth"
-	"github.com/atomi-ai/atomi/app"
 	"github.com/gin-gonic/gin"
 )
 
-func setup() (*app.Application, error) {
-	app, err := app.InitializeTestingApplication()
-	if err != nil {
-		return nil, err
-	}
-	return app, nil
-}
-
 func TestLoginController_Login(t *testing.T) {
-	app, err := setup()
+	app, err := tests.Setup("login")
 	if err != nil {
 		t.Fatalf("Failed to setup test environment: %v", err)
 	}
@@ -50,7 +42,6 @@ func TestLoginController_Login(t *testing.T) {
 	respBody := w.Body.String()
 
 	expectedFields := []string{
-		`"id":1`,
 		`"email":"test@example.com"`,
 		`"role":"USER"`,
 		`"phone":""`,

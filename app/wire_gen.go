@@ -17,12 +17,13 @@ import (
 
 // Injectors from wire.go:
 
-func InitializeApplication(db *gorm.DB, firebaseApp utils.FirebaseAppWrapper, stripeWrapper utils.StripeWrapper) (*Application, error) {
+func InitializeApplication(db *gorm.DB, authWrapper utils.AuthAppWrapper, stripeWrapper utils.StripeWrapper) (*Application, error) {
 	userRepository := repositories.NewUserRepository(db)
-	authMiddleware := middlewares.NewAuthMiddleware(userRepository, firebaseApp)
+	authMiddleware := middlewares.NewAuthMiddleware(userRepository, authWrapper)
 	addressRepository := repositories.NewAddressRepository(db)
 	orderRepository := repositories.NewOrderRepository(db)
 	orderItemRepository := repositories.NewOrderItemRepository(db)
+	productRepository := repositories.NewProductRepository(db)
 	productStoreRepository := repositories.NewProductStoreRepository(db)
 	storeRepository := repositories.NewStoreRepository(db)
 	userAddressRepository := repositories.NewUserAddressRepository(db)
@@ -38,12 +39,13 @@ func InitializeApplication(db *gorm.DB, firebaseApp utils.FirebaseAppWrapper, st
 	stripeController := controllers.NewStripeController(userService, stripeService, orderService, addressRepository)
 	userController := controllers.NewUserController(userService)
 	application := &Application{
-		FirebaseApp:            firebaseApp,
+		AuthWrapper:            authWrapper,
 		StripeWrapper:          stripeWrapper,
 		AuthMiddleware:         authMiddleware,
 		AddressRepository:      addressRepository,
 		OrderRepository:        orderRepository,
 		OrderItemRepository:    orderItemRepository,
+		ProductRepository:      productRepository,
 		ProductStoreRepository: productStoreRepository,
 		StoreRepository:        storeRepository,
 		UserAddressRepository:  userAddressRepository,
@@ -66,13 +68,14 @@ func InitializeApplication(db *gorm.DB, firebaseApp utils.FirebaseAppWrapper, st
 // wire.go:
 
 type Application struct {
-	FirebaseApp    utils.FirebaseAppWrapper
+	AuthWrapper    utils.AuthAppWrapper
 	StripeWrapper  utils.StripeWrapper
 	AuthMiddleware middlewares.AuthMiddleware
 
 	AddressRepository      repositories.AddressRepository
 	OrderRepository        repositories.OrderRepository
 	OrderItemRepository    repositories.OrderItemRepository
+	ProductRepository      repositories.ProductRepository
 	ProductStoreRepository repositories.ProductStoreRepository
 	StoreRepository        repositories.StoreRepository
 	UserAddressRepository  repositories.UserAddressRepository
