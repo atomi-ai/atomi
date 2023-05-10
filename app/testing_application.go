@@ -2,9 +2,7 @@ package app
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"log"
 
 	"firebase.google.com/go/v4/auth"
 	"github.com/atomi-ai/atomi/models"
@@ -13,12 +11,15 @@ import (
 	"gorm.io/gorm"
 )
 
-type MockFirebaseApp struct{}
+type MockAuthApp struct{}
 
-func (m *MockFirebaseApp) Auth(_ context.Context) (*auth.Client, error) {
-	// 在这里返回一个Mock的auth.Client
-	// 或者如果你想模拟一个错误，你可以返回一个错误，例如：
-	return nil, errors.New("Not implemented yet")
+func (m *MockAuthApp) AuthAndDecode(_ context.Context, _ string) (*auth.Token, error) {
+	mockDecodedToken := &auth.Token{
+		Claims: map[string]interface{}{
+			"email": "john.doe@example.com",
+		},
+	}
+	return mockDecodedToken, nil
 }
 
 type MockStripeWrapper struct{}
@@ -31,24 +32,23 @@ func (m *MockStripeWrapper) CreateCustomer(email string) (*stripe.Customer, erro
 	return mockCustomer, nil
 }
 
-func InitializeTestingApplication() (*Application, error) {
+func InitializeTestingApplication(dbName string) (*Application, error) {
 	// 创建一个内存中的SQLite数据库
-	db, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{})
+	dsn := fmt.Sprintf("file:%v?mode=memory&cache=shared", dbName)
+	db, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to in-memory SQLite database: %w", err)
 	}
 
 	// 自动迁移模型
-	if err = db.AutoMigrate(&models.User{}); err != nil {
-		log.Fatal("Errors in init sqlite testing db", err)
-	}
+	models.AutoMigrate(db)
 
 	// 使用Mock替换Firebase和Stripe等外部服务
-	mockFirebaseApp := new(MockFirebaseApp)
+	mockAuthApp := new(MockAuthApp)
 	mockStripeWrapper := new(MockStripeWrapper)
 
 	// 创建一个用于测试的 *Application 实例
-	app, err := InitializeApplication(db, mockFirebaseApp, mockStripeWrapper)
+	app, err := InitializeApplication(db, mockAuthApp, mockStripeWrapper)
 	if err != nil {
 		return nil, err
 	}

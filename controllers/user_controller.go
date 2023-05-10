@@ -3,6 +3,8 @@ package controllers
 import (
 	"net/http"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/atomi-ai/atomi/services"
 
 	"github.com/atomi-ai/atomi/models"
@@ -37,6 +39,7 @@ func (uc *UserControllerImpl) SetCurrentPaymentMethod(c *gin.Context) {
 	updatedUser, err := uc.UserService.SetCurrentPaymentMethod(user, &paymentMethodID)
 
 	if err != nil {
+		log.Errorf("Errors in updating payment method of user: %v(%v), err: \n%v", user, paymentMethodID, err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

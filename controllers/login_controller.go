@@ -41,6 +41,7 @@ func (l *LoginControllerImpl) Login(c *gin.Context) {
 				Role:  "USER",
 			}
 		} else {
+			log.Errorf("Errors in fetching user(%v), err: \n%v", email, err)
 			c.JSON(500, gin.H{"error": "Error fetching user"})
 			return
 		}
@@ -51,6 +52,7 @@ func (l *LoginControllerImpl) Login(c *gin.Context) {
 		dirty = true
 		stripeCustomer, err := l.createStripeCustomer(email)
 		if err != nil {
+			log.Errorf("Error creating Stripe customer(%v), err: \n%v", email, err)
 			c.JSON(500, gin.H{"error": "Error creating Stripe customer"})
 			return
 		}
@@ -60,6 +62,7 @@ func (l *LoginControllerImpl) Login(c *gin.Context) {
 	if dirty {
 		if user, err = l.UserRepository.Save(user); err != nil {
 			log.Errorf("Errors in saving user %v, err: \n%v", user, err)
+			c.JSON(500, gin.H{"error": "Errors in saving user"})
 		}
 	}
 
