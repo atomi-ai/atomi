@@ -6,20 +6,26 @@ import (
 	"github.com/atomi-ai/atomi/models"
 	"github.com/atomi-ai/atomi/services"
 	"github.com/gin-gonic/gin"
+	"github.com/spf13/viper"
 )
 
 type OrderController interface {
 	GetUserOrders(c *gin.Context)
 	AddOrderForUser(c *gin.Context)
+	UberQuote(c *gin.Context)
+	GetDelivery(c *gin.Context)
+	CreateDelivery(c *gin.Context)
 }
 
 type OrderControllerImpl struct {
 	OrderService services.OrderService
+	UberService  services.UberService
 }
 
-func NewOrderController(orderService services.OrderService) OrderController {
+func NewOrderController(orderService services.OrderService, uberService services.UberService) OrderController {
 	return &OrderControllerImpl{
 		OrderService: orderService,
+		UberService:  uberService,
 	}
 }
 
@@ -49,4 +55,59 @@ func (oc *OrderControllerImpl) AddOrderForUser(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, savedOrder)
+}
+
+func (oc *OrderControllerImpl) UberQuote(c *gin.Context) {
+	var requestBody models.QuoteRequest
+	if err := c.BindJSON(&requestBody); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	response, err := oc.UberService.Quote(&requestBody)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+func (oc *OrderControllerImpl) GetDelivery(c *gin.Context) {
+	deliveryId := c.Param("deliveryId")
+	response, err := oc.UberService.GetDelivery(deliveryId)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+func (oc *OrderControllerImpl) CreateDelivery(c *gin.Context) {
+	var requestBody models.DeliveryData
+	if err := c.BindJSON(&requestBody); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// 根据你的配置文件设置测试模式
+	testMode := viper.GetBool("testMode")
+
+	// 如果处于测试模式，则在requestBody中插入字段
+	if testMode {
+		requestBody.TestSpecifications = &models.TestSpecifications{
+			RoboCourierSpecification: models.RoboCourierSpecification{
+				Mode: "auto",
+			},
+		}
+	}
+
+	response, err := oc.UberService.CreateDelivery(&requestBody)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
 }

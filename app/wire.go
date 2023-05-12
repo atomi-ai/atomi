@@ -32,6 +32,7 @@ type Application struct {
 	OrderService   services.OrderService
 	StripeService  services.StripeService
 	UserService    services.UserService
+	UberService    services.UberService
 
 	AddressController controllers.AddressController
 	LoginController   controllers.LoginController
@@ -58,6 +59,7 @@ func InitializeApplication(db *gorm.DB, authWrapper utils.AuthAppWrapper, stripe
 		services.NewUserService,
 		services.NewStripeService,
 		services.NewOrderService,
+		services.NewUberService,
 		controllers.NewAddressControl,
 		controllers.NewLoginController,
 		controllers.NewOrderController,
