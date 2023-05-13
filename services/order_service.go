@@ -61,8 +61,8 @@ func (os *orderService) GetUserOrders(userID int64) ([]models.Order, error) {
 			continue
 		}
 
-		deliveryId := *orders[i].DeliveryID
-		deliveryResponse, err := os.UberService.GetDelivery(deliveryId)
+		deliveryID := *orders[i].DeliveryID
+		deliveryResponse, err := os.UberService.GetDelivery(deliveryID)
 		if err != nil {
 			return nil, err
 		}

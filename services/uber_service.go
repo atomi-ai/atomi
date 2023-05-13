@@ -10,21 +10,21 @@ import (
 )
 
 const (
-	AUTH_URL = "https://login.uber.com/oauth/v2/token"
-	BASE_URL = "https://api.uber.com/v1/customers"
+	AuthURL = "https://login.uber.com/oauth/v2/token"
+	BaseURL = "https://api.uber.com/v1/customers"
 )
 
 type UberService interface {
 	Quote(requestBody *models.QuoteRequest) (*models.QuoteResponse, error)
 	CreateDelivery(requestBody *models.DeliveryData) (*models.DeliveryResponse, error)
-	GetDelivery(deliveryId string) (*models.DeliveryResponse, error)
+	GetDelivery(deliveryID string) (*models.DeliveryResponse, error)
 }
 
 type UberServiceImpl struct {
-	HttpClient                  *resty.Client
-	ClientId                    string
+	HTTPClient                  *resty.Client
+	ClientID                    string
 	ClientSecret                string
-	DAAS_URL                    string
+	DaasURL                     string
 	Accessauthorization         string
 	authorizationExpirationTime int64
 }
@@ -32,25 +32,25 @@ type UberServiceImpl struct {
 func NewUberService() UberService {
 	httpClient := resty.New()
 	return &UberServiceImpl{
-		HttpClient:   httpClient,
-		ClientId:     viper.GetString("uberClientId"),
+		HTTPClient:   httpClient,
+		ClientID:     viper.GetString("uberClientId"),
 		ClientSecret: viper.GetString("uberClientSecret"),
-		DAAS_URL:     BASE_URL + "/" + viper.GetString("uberCustomId"),
+		DaasURL:      BaseURL + "/" + viper.GetString("uberCustomId"),
 	}
 }
 
 func (u *UberServiceImpl) getAuthorization() (string, error) {
 	if u.Accessauthorization == "" || (u.authorizationExpirationTime != 0 && time.Now().Unix() >= u.authorizationExpirationTime) {
 		response := &models.TokenResponse{}
-		_, err := u.HttpClient.R().
+		_, err := u.HTTPClient.R().
 			SetFormData(map[string]string{
 				"grant_type":    "client_credentials",
-				"client_id":     u.ClientId,
+				"client_id":     u.ClientID,
 				"client_secret": u.ClientSecret,
 				"scope":         "eats.deliveries",
 			}).
 			SetResult(response).
-			Post(AUTH_URL)
+			Post(AuthURL)
 
 		if err != nil {
 			return "", err
@@ -67,9 +67,9 @@ func (u *UberServiceImpl) Quote(requestBody *models.QuoteRequest) (*models.Quote
 	if err != nil {
 		return nil, err
 	}
-	url := u.DAAS_URL + "/delivery_quotes"
+	url := u.DaasURL + "/delivery_quotes"
 	response := &models.QuoteResponse{}
-	resp, err := u.HttpClient.R().
+	resp, err := u.HTTPClient.R().
 		SetHeader("Authorization", authorization).
 		SetBody(requestBody).
 		SetResult(response).
@@ -88,9 +88,9 @@ func (u *UberServiceImpl) CreateDelivery(requestBody *models.DeliveryData) (*mod
 		return nil, err
 	}
 
-	url := u.DAAS_URL + "/deliveries"
+	url := u.DaasURL + "/deliveries"
 	response := &models.DeliveryResponse{}
-	resp, err := u.HttpClient.R().
+	resp, err := u.HTTPClient.R().
 		SetHeader("Authorization", authorization).
 		SetBody(requestBody).
 		SetResult(response).
@@ -103,15 +103,15 @@ func (u *UberServiceImpl) CreateDelivery(requestBody *models.DeliveryData) (*mod
 	return response, nil
 }
 
-func (u *UberServiceImpl) GetDelivery(deliveryId string) (*models.DeliveryResponse, error) {
+func (u *UberServiceImpl) GetDelivery(deliveryID string) (*models.DeliveryResponse, error) {
 	authorization, err := u.getAuthorization()
 	if err != nil {
 		return nil, err
 	}
 
-	url := u.DAAS_URL + "/deliveries/" + deliveryId
+	url := u.DaasURL + "/deliveries/" + deliveryID
 	response := &models.DeliveryResponse{}
-	resp, err := u.HttpClient.R().
+	resp, err := u.HTTPClient.R().
 		SetHeader("Authorization", authorization).
 		SetResult(response).
 		Get(url)

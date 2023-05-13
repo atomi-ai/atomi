@@ -74,8 +74,8 @@ func (oc *OrderControllerImpl) UberQuote(c *gin.Context) {
 }
 
 func (oc *OrderControllerImpl) GetDelivery(c *gin.Context) {
-	deliveryId := c.Param("deliveryId")
-	response, err := oc.UberService.GetDelivery(deliveryId)
+	deliveryID := c.Param("deliveryID")
+	response, err := oc.UberService.GetDelivery(deliveryID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
