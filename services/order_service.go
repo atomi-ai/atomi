@@ -20,13 +20,15 @@ type orderService struct {
 	OrderRepo     repositories.OrderRepository
 	OrderItemRepo repositories.OrderItemRepository
 	StripeService StripeService
+	UberService   UberService
 }
 
-func NewOrderService(orderRepo repositories.OrderRepository, orderItemRepo repositories.OrderItemRepository, stripeService StripeService) OrderService {
+func NewOrderService(orderRepo repositories.OrderRepository, orderItemRepo repositories.OrderItemRepository, stripeService StripeService, uberService UberService) OrderService {
 	return &orderService{
 		OrderRepo:     orderRepo,
 		OrderItemRepo: orderItemRepo,
 		StripeService: stripeService,
+		UberService:   uberService,
 	}
 }
 
@@ -38,7 +40,7 @@ func (os *orderService) GetUserOrders(userID int64) ([]models.Order, error) {
 
 	for i := range orders {
 		if orders[i].PaymentIntentID == nil || *orders[i].PaymentIntentID == "" {
-			orders[i].DisplayStatus = "pending payment"
+			orders[i].DisplayStatus = models.OrderStatusWaitingForPayment
 			continue
 		}
 
@@ -49,10 +51,23 @@ func (os *orderService) GetUserOrders(userID int64) ([]models.Order, error) {
 
 		refunded := paymentIntent.LatestCharge.Refunded
 		if refunded {
-			orders[i].DisplayStatus = "refunded"
-		} else {
-			orders[i].DisplayStatus = string(paymentIntent.Status)
+			orders[i].DisplayStatus = models.OrderStatusRefunded
+			continue
 		}
+
+		if orders[i].DeliveryID == nil || *orders[i].DeliveryID == "" {
+			//TODO: 这里是到店自取订单，需要根据制作和取货情况来赋值
+			orders[i].DisplayStatus = models.OrderStatusCompleted
+			continue
+		}
+
+		deliveryId := *orders[i].DeliveryID
+		deliveryResponse, err := os.UberService.GetDelivery(deliveryId)
+		if err != nil {
+			return nil, err
+		}
+
+		orders[i].DisplayStatus = models.DeliveryToOrderStatus[deliveryResponse.Status]
 	}
 
 	return orders, nil

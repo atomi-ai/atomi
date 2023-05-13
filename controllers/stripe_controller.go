@@ -163,6 +163,7 @@ func (sc *StripeControllerImpl) Pay(c *gin.Context) {
 		}
 	}
 
+	// TODO: 改成由后台手动创建Delivery订单？
 	deliveryResponse, err := sc.UberService.CreateDelivery(&deliveryRequest)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
