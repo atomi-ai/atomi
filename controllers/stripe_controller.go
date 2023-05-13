@@ -8,6 +8,7 @@ import (
 	"github.com/atomi-ai/atomi/repositories"
 	"github.com/atomi-ai/atomi/services"
 	"github.com/gin-gonic/gin"
+	"github.com/spf13/viper"
 	"github.com/stripe/stripe-go/v74"
 )
 
@@ -25,14 +26,16 @@ type StripeControllerImpl struct {
 	UserService   services.UserService
 	StripeService services.StripeService
 	OrderService  services.OrderService
+	UberService   services.UberService
 	AddressRepo   repositories.AddressRepository
 }
 
-func NewStripeController(userService services.UserService, stripeService services.StripeService, orderService services.OrderService, addressRepo repositories.AddressRepository) StripeController {
+func NewStripeController(userService services.UserService, stripeService services.StripeService, orderService services.OrderService, uberService services.UberService, addressRepo repositories.AddressRepository) StripeController {
 	return &StripeControllerImpl{
 		UserService:   userService,
 		StripeService: stripeService,
 		OrderService:  orderService,
+		UberService:   uberService,
 		AddressRepo:   addressRepo,
 	}
 }
@@ -137,6 +140,37 @@ func (sc *StripeControllerImpl) Pay(c *gin.Context) {
 	}
 
 	_, err = sc.OrderService.UpdatePaymentIntentID(piRequest.OrderID, pi.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if piRequest.DeliveryData == nil {
+		c.JSON(http.StatusOK, pi)
+		return
+	}
+
+	deliveryRequest := *piRequest.DeliveryData
+	// 根据你的配置文件设置测试模式
+	testMode := viper.GetBool("testMode")
+
+	// 如果处于测试模式，则在requestBody中插入字段
+	if testMode {
+		deliveryRequest.TestSpecifications = &models.TestSpecifications{
+			RoboCourierSpecification: models.RoboCourierSpecification{
+				Mode: "auto",
+			},
+		}
+	}
+
+	// TODO: 改成由后台手动创建Delivery订单？
+	deliveryResponse, err := sc.UberService.CreateDelivery(&deliveryRequest)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	_, err = sc.OrderService.UpdateDeliveryID(piRequest.OrderID, deliveryResponse.ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

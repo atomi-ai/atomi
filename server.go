@@ -16,7 +16,9 @@ func main() {
 	models.AutoMigrate(db)
 	utils.InitStripe(viper.GetString("stripeKey"))
 
-	app, err := application.InitializeApplication(db, utils.NewFirebaseAppWrapper(utils.FirebaseAppProvider()), utils.NewStripeWrapper())
+	app, err := application.InitializeApplication(db,
+		utils.NewFirebaseAppWrapper(utils.FirebaseAppProvider()),
+		utils.NewStripeWrapper())
 	if err != nil {
 		log.Fatalf("Failed to initialize application: %v", err)
 	}
@@ -66,6 +68,9 @@ func main() {
 	// Add order endpoints here
 	r.GET("/api/orders", app.OrderController.GetUserOrders)
 	r.POST("/api/order", app.OrderController.AddOrderForUser)
+	r.POST("/api/uber/quote", app.OrderController.UberQuote)
+	r.POST("/api/uber/delivery", app.OrderController.CreateDelivery)
+	r.GET("/api/uber/delivery/:deliveryId", app.OrderController.GetDelivery)
 
 	// APIs below are not tested by flutter tests yet.
 	if err = r.Run(":8081"); err != nil {
