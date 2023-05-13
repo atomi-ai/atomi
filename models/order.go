@@ -10,6 +10,7 @@ type Order struct {
 	CreatedAt       time.Time   `gorm:"column:created_at" json:"created_at"`
 	UpdatedAt       time.Time   `gorm:"column:updated_at" json:"updated_at"`
 	PaymentIntentID *string     `gorm:"column:payment_intent_id;unique" json:"payment_intent_id"`
+	DeliveryID      *string     `gorm:"column:delivery_id;unique" json:"delivery_id"`
 	OrderItems      []OrderItem `gorm:"foreignKey:OrderID" json:"order_items"`
 	DisplayStatus   string      `gorm:"-" json:"display_status"`
 }

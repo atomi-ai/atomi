@@ -11,6 +11,7 @@ type TokenResponse struct {
 }
 
 type QuoteRequest struct {
+	// Street Address, City, State, Zip
 	DropoffAddress     string     `json:"dropoff_address"`
 	PickupAddress      string     `json:"pickup_address"`
 	DropoffLatitude    *float64   `json:"dropoff_latitude,omitempty"`
@@ -95,7 +96,7 @@ type Dimensions struct {
 type ManifestItem struct {
 	Name       string      `json:"name"`
 	Quantity   int         `json:"quantity"`
-	Size       Size        `json:"size"`
+	Size       *Size       `json:"size"`
 	Dimensions *Dimensions `json:"dimensions,omitempty"`
 	Price      *int        `json:"price,omitempty"`
 	Weight     *int        `json:"weight,omitempty"`

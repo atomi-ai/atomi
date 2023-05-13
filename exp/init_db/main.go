@@ -89,6 +89,7 @@ func (t *TestEnvSetup) run(authClient *auth.Client) {
 		City:    "Fremont",
 		ZipCode: "94555",
 		State:   "CA",
+		Phone:   "5103490111",
 	}
 	store2 := &models.Store{
 		Name:    "second_store",
@@ -96,6 +97,7 @@ func (t *TestEnvSetup) run(authClient *auth.Client) {
 		City:    "Fremont",
 		ZipCode: "94536",
 		State:   "CA",
+		Phone:   "5103490222",
 	}
 	t.StoreRepository.Save(store1)
 	t.StoreRepository.Save(store2)

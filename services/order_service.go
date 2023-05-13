@@ -13,6 +13,7 @@ type OrderService interface {
 	AddOrderForUser(user *models.User, order *models.Order) (*models.Order, error)
 	FindOrderByID(orderID int64) (*models.Order, error)
 	UpdatePaymentIntentID(orderID int64, paymentIntentID string) (*models.Order, error)
+	UpdateDeliveryID(orderID int64, deliveryID string) (*models.Order, error)
 }
 
 type orderService struct {
@@ -108,6 +109,24 @@ func (os *orderService) UpdatePaymentIntentID(orderID int64, paymentIntentID str
 	}
 
 	order.PaymentIntentID = &paymentIntentID
+	err = os.OrderRepo.Save(order)
+	if err != nil {
+		return nil, err
+	}
+
+	return order, nil
+}
+
+func (os *orderService) UpdateDeliveryID(orderID int64, deliveryID string) (*models.Order, error) {
+	order, err := os.OrderRepo.GetByID(orderID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("ORDER NOT FOUND")
+		}
+		return nil, err
+	}
+
+	order.DeliveryID = &deliveryID
 	err = os.OrderRepo.Save(order)
 	if err != nil {
 		return nil, err

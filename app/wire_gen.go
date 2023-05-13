@@ -37,7 +37,7 @@ func InitializeApplication(db *gorm.DB, authWrapper utils.AuthAppWrapper, stripe
 	loginController := controllers.NewLoginController(userRepository, stripeWrapper)
 	orderController := controllers.NewOrderController(orderService, uberService)
 	storeController := controllers.NewStoreController(productStoreRepository, storeRepository, userStoreRepository)
-	stripeController := controllers.NewStripeController(userService, stripeService, orderService, addressRepository)
+	stripeController := controllers.NewStripeController(userService, stripeService, orderService, uberService, addressRepository)
 	userController := controllers.NewUserController(userService)
 	application := &Application{
 		AuthWrapper:            authWrapper,
