@@ -1,7 +1,9 @@
 package services
 
 import (
+	"errors"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/atomi-ai/atomi/models"
@@ -42,7 +44,8 @@ func NewUberService() UberService {
 func (u *UberServiceImpl) getAuthorization() (string, error) {
 	if u.Accessauthorization == "" || (u.authorizationExpirationTime != 0 && time.Now().Unix() >= u.authorizationExpirationTime) {
 		response := &models.TokenResponse{}
-		_, err := u.HTTPClient.R().
+		errorResponse := &models.ErrorResponse{}
+		resp, err := u.HTTPClient.R().
 			SetFormData(map[string]string{
 				"grant_type":    "client_credentials",
 				"client_id":     u.ClientID,
@@ -50,11 +53,17 @@ func (u *UberServiceImpl) getAuthorization() (string, error) {
 				"scope":         "eats.deliveries",
 			}).
 			SetResult(response).
+			SetError(errorResponse).
 			Post(AuthURL)
 
 		if err != nil {
 			return "", err
 		}
+
+		if resp.StatusCode() != http.StatusOK {
+			return "", errors.New(errorResponse.ToString())
+		}
+
 		u.Accessauthorization = fmt.Sprintf("%s %s", response.TokenType, response.AccessToken)
 		u.authorizationExpirationTime = time.Now().Unix() + response.ExpiresIn - 300
 	}
@@ -69,14 +78,20 @@ func (u *UberServiceImpl) Quote(requestBody *models.QuoteRequest) (*models.Quote
 	}
 	url := u.DaasURL + "/delivery_quotes"
 	response := &models.QuoteResponse{}
+	errorResponse := &models.ErrorResponse{}
 	resp, err := u.HTTPClient.R().
 		SetHeader("Authorization", authorization).
 		SetBody(requestBody).
 		SetResult(response).
+		SetError(errorResponse).
 		Post(url)
 	fmt.Printf("Uber POST %s\n%v\n%v\n%v\n", url, *requestBody, resp, err)
 	if err != nil {
 		return nil, err
+	}
+
+	if resp.StatusCode() != http.StatusOK {
+		return nil, errors.New(errorResponse.ToString())
 	}
 
 	return response, nil
@@ -90,14 +105,20 @@ func (u *UberServiceImpl) CreateDelivery(requestBody *models.DeliveryData) (*mod
 
 	url := u.DaasURL + "/deliveries"
 	response := &models.DeliveryResponse{}
+	errorResponse := &models.ErrorResponse{}
 	resp, err := u.HTTPClient.R().
 		SetHeader("Authorization", authorization).
 		SetBody(requestBody).
 		SetResult(response).
+		SetError(errorResponse).
 		Post(url)
 	fmt.Printf("Uber POST %s\n%v\n%v\n%v\n", url, *requestBody, resp, err)
 	if err != nil {
 		return nil, err
+	}
+
+	if resp.StatusCode() != http.StatusOK {
+		return nil, errors.New(errorResponse.ToString())
 	}
 
 	return response, nil
@@ -111,13 +132,19 @@ func (u *UberServiceImpl) GetDelivery(deliveryID string) (*models.DeliveryRespon
 
 	url := u.DaasURL + "/deliveries/" + deliveryID
 	response := &models.DeliveryResponse{}
+	errorResponse := &models.ErrorResponse{}
 	resp, err := u.HTTPClient.R().
 		SetHeader("Authorization", authorization).
 		SetResult(response).
+		SetError(errorResponse).
 		Get(url)
 	fmt.Printf("Uber GET %s\n%v\n%v\n", url, resp, err)
 	if err != nil {
 		return nil, err
+	}
+
+	if resp.StatusCode() != http.StatusOK {
+		return nil, errors.New(errorResponse.ToString())
 	}
 
 	return response, nil

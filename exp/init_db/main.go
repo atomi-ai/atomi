@@ -85,18 +85,18 @@ func (t *TestEnvSetup) run(authClient *auth.Client) {
 	// 3. Add stores to the database
 	store1 := &models.Store{
 		Name:    "first_store",
-		Address: "1200 Fremont Blvd",
-		City:    "Fremont",
-		ZipCode: "94555",
+		Address: "1 Washington St",
+		City:    "San Jose",
+		ZipCode: "95192",
 		State:   "CA",
 		Phone:   "5103490111",
 	}
 	store2 := &models.Store{
 		Name:    "second_store",
-		Address: "1800 Washington Blvd",
-		City:    "Fremont",
-		ZipCode: "94536",
-		State:   "CA",
+		Address: "1450 W Pleasant Run Rd",
+		City:    "Lancaster",
+		ZipCode: "75146",
+		State:   "TX",
 		Phone:   "5103490222",
 	}
 	t.StoreRepository.Save(store1)

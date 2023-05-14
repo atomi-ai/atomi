@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -328,4 +329,15 @@ const (
 type RefundItem struct {
 	Name     string `json:"name"`
 	Quantity int    `json:"quantity"`
+}
+
+type ErrorResponse struct {
+	Code     string            `json:"code"`
+	Message  string            `json:"message"`
+	Kind     string            `json:"kind"`
+	Metadata map[string]string `json:"metadata"`
+}
+
+func (e *ErrorResponse) ToString() string {
+	return fmt.Sprintf("Code: %s, Message: %s, Kind: %s, Metadata: %v", e.Code, e.Message, e.Kind, e.Metadata)
 }
