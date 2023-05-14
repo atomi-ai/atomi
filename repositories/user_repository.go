@@ -8,7 +8,7 @@ import (
 
 type UserRepository interface {
 	FindByEmail(email string) (*models.User, error)
-	GetByID(userID uint64) (*models.User, error)
+	GetByID(userID int64) (*models.User, error)
 	Save(user *models.User) (*models.User, error)
 }
 
@@ -26,7 +26,7 @@ func (repo *userRepositoryImpl) FindByEmail(email string) (*models.User, error) 
 	return &user, err
 }
 
-func (repo *userRepositoryImpl) GetByID(userID uint64) (*models.User, error) {
+func (repo *userRepositoryImpl) GetByID(userID int64) (*models.User, error) {
 	var user models.User
 	err := repo.db.First(&user, userID).Error
 	return &user, err

@@ -17,34 +17,47 @@ import (
 
 // Injectors from wire.go:
 
-func InitializeApplication(db *gorm.DB, authWrapper utils.AuthAppWrapper, stripeWrapper utils.StripeWrapper) (*Application, error) {
+func InitializeApplication(db *gorm.DB, authWrapper utils.AuthAppWrapper, blobStorage utils.BlobStorage, stripeWrapper utils.StripeWrapper) (*Application, error) {
 	userRepository := repositories.NewUserRepository(db)
 	authMiddleware := middlewares.NewAuthMiddleware(userRepository, authWrapper)
 	addressRepository := repositories.NewAddressRepository(db)
-	orderRepository := repositories.NewOrderRepository(db)
-	orderItemRepository := repositories.NewOrderItemRepository(db)
+	userAddressRepository := repositories.NewUserAddressRepository(db)
+	addressService := services.NewAddressService(userRepository, addressRepository, userAddressRepository)
+	userService := services.NewUserService(userRepository)
+	addressController := controllers.NewAddressControl(addressService, userService, addressRepository)
+	imageController := controllers.NewImageController(blobStorage)
+	loginController := controllers.NewLoginController(userRepository, stripeWrapper)
+	managerStoreRepository := repositories.NewManagerStoreRepository(db)
 	productRepository := repositories.NewProductRepository(db)
 	productStoreRepository := repositories.NewProductStoreRepository(db)
 	storeRepository := repositories.NewStoreRepository(db)
-	userAddressRepository := repositories.NewUserAddressRepository(db)
-	userStoreRepository := repositories.NewUserStoreRepository(db)
-	addressService := services.NewAddressService(userRepository, addressRepository, userAddressRepository)
+	productStoreService := services.NewProductStoreService(productRepository, productStoreRepository)
+	managerStoreController := controllers.NewManagerStoreController(managerStoreRepository, productRepository, productStoreRepository, storeRepository, productStoreService)
+	orderRepository := repositories.NewOrderRepository(db)
+	orderItemRepository := repositories.NewOrderItemRepository(db)
 	stripeService := services.NewStripeService()
-	userService := services.NewUserService(userRepository)
 	uberService := services.NewUberService()
 	orderService := services.NewOrderService(orderRepository, orderItemRepository, stripeService, uberService)
-
-	addressController := controllers.NewAddressControl(addressService, userService, addressRepository)
-	loginController := controllers.NewLoginController(userRepository, stripeWrapper)
 	orderController := controllers.NewOrderController(orderService, uberService)
-	storeController := controllers.NewStoreController(productStoreRepository, storeRepository, userStoreRepository)
+	userStoreRepository := repositories.NewUserStoreRepository(db)
+	storeController := controllers.NewStoreController(managerStoreRepository, productStoreRepository, storeRepository, userStoreRepository)
 	stripeController := controllers.NewStripeController(userService, stripeService, orderService, uberService, addressRepository)
 	userController := controllers.NewUserController(userService)
 	application := &Application{
 		AuthWrapper:            authWrapper,
+		BlobStorage:            blobStorage,
 		StripeWrapper:          stripeWrapper,
 		AuthMiddleware:         authMiddleware,
+		AddressController:      addressController,
+		ImageController:        imageController,
+		LoginController:        loginController,
+		ManagerStoreController: managerStoreController,
+		OrderController:        orderController,
+		StoreController:        storeController,
+		StripeController:       stripeController,
+		UserController:         userController,
 		AddressRepository:      addressRepository,
+		ManagerStoreRepository: managerStoreRepository,
 		OrderRepository:        orderRepository,
 		OrderItemRepository:    orderItemRepository,
 		ProductRepository:      productRepository,
@@ -55,14 +68,9 @@ func InitializeApplication(db *gorm.DB, authWrapper utils.AuthAppWrapper, stripe
 		UserStoreRepository:    userStoreRepository,
 		AddressService:         addressService,
 		OrderService:           orderService,
+		ProductStoreService:    productStoreService,
 		StripeService:          stripeService,
 		UserService:            userService,
-		AddressController:      addressController,
-		LoginController:        loginController,
-		OrderController:        orderController,
-		StoreController:        storeController,
-		StripeController:       stripeController,
-		UserController:         userController,
 	}
 	return application, nil
 }
@@ -71,10 +79,21 @@ func InitializeApplication(db *gorm.DB, authWrapper utils.AuthAppWrapper, stripe
 
 type Application struct {
 	AuthWrapper    utils.AuthAppWrapper
+	BlobStorage    utils.BlobStorage
 	StripeWrapper  utils.StripeWrapper
 	AuthMiddleware middlewares.AuthMiddleware
 
+	AddressController      controllers.AddressController
+	ImageController        controllers.ImageController
+	LoginController        controllers.LoginController
+	ManagerStoreController controllers.ManagerStoreController
+	OrderController        controllers.OrderController
+	StoreController        controllers.StoreController
+	StripeController       controllers.StripeController
+	UserController         controllers.UserController
+
 	AddressRepository      repositories.AddressRepository
+	ManagerStoreRepository repositories.ManagerStoreRepository
 	OrderRepository        repositories.OrderRepository
 	OrderItemRepository    repositories.OrderItemRepository
 	ProductRepository      repositories.ProductRepository
@@ -84,15 +103,9 @@ type Application struct {
 	UserRepository         repositories.UserRepository
 	UserStoreRepository    repositories.UserStoreRepository
 
-	AddressService services.AddressService
-	OrderService   services.OrderService
-	StripeService  services.StripeService
-	UserService    services.UserService
-
-	AddressController controllers.AddressController
-	LoginController   controllers.LoginController
-	OrderController   controllers.OrderController
-	StoreController   controllers.StoreController
-	StripeController  controllers.StripeController
-	UserController    controllers.UserController
+	AddressService      services.AddressService
+	OrderService        services.OrderService
+	ProductStoreService services.ProductStoreService
+	StripeService       services.StripeService
+	UserService         services.UserService
 }

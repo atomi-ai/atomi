@@ -12,6 +12,8 @@ type ProductStoreRepository interface {
 	FindAllByStoreID(storeID int64) ([]*models.ProductStore, error)
 	FindByStoreAndProduct(store *models.Store, product *models.Product) (*models.ProductStore, error)
 	SaveAll(productStores []*models.ProductStore) error
+	AddProductToStore(storeID, productID int64) error
+	RemoveProductFromStore(storeID, productID int64) error
 }
 
 // productStoreRepositoryImpl represents the implementation of ProductStoreRepository
@@ -74,4 +76,14 @@ func (r *productStoreRepositoryImpl) SaveAll(productStores []*models.ProductStor
 	}
 
 	return tx.Commit().Error
+}
+
+func (r *productStoreRepositoryImpl) AddProductToStore(storeID, productID int64) error {
+	productStore := &models.ProductStore{StoreID: storeID, ProductID: productID}
+	return r.db.Create(productStore).Error
+}
+
+func (r *productStoreRepositoryImpl) RemoveProductFromStore(storeID, productID int64) error {
+	productStore := &models.ProductStore{StoreID: storeID, ProductID: productID}
+	return r.db.Where("store_id = ? AND product_id = ?", storeID, productID).Delete(productStore).Error
 }

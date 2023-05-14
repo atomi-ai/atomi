@@ -22,7 +22,7 @@ func TestUserController_GetUser(t *testing.T) {
 	//c.Request = httptest.NewRequest("GET", "/user", nil)
 
 	mockUser := &models.User{
-		ID: 1,
+		BaseModel: models.BaseModel{ID: 1},
 	}
 	c.Set("user", mockUser)
 
@@ -63,7 +63,7 @@ func TestUserController_SetCurrentPaymentMethod(t *testing.T) {
 	}
 
 	mockUser := &models.User{
-		ID: 1,
+		BaseModel: models.BaseModel{ID: 1},
 	}
 	c.Set("user", mockUser)
 

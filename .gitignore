@@ -29,6 +29,5 @@ vendor
 .DS_Store
 
 # Key related files
-.config/firebase-secret-20230317.json
-.config/production.yaml
-.config/testing-local.yaml
+.config/*
+!.config/testing*
