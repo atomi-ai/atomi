@@ -26,7 +26,7 @@ func TestStoreGetDefaultStore(t *testing.T) {
 
 	// 创建一个商店
 	store := &models.Store{Name: "Test Store", Address: "123 Main St", City: "New York", State: "NY", ZipCode: "10001", Phone: "555-1234"}
-	if err = app.StoreRepository.Save(store); err != nil {
+	if err = app.ManagerStoreRepository.Save(store); err != nil {
 		t.Fatalf("Failed to create store: %v", err)
 	}
 
@@ -75,12 +75,12 @@ func TestStoreSetDefaultStore(t *testing.T) {
 
 	// 创建两个商店
 	store1 := &models.Store{Name: "Test Store 1", Address: "123 Main St", City: "New York", State: "NY", ZipCode: "10001", Phone: "555-1234"}
-	if err = app.StoreRepository.Save(store1); err != nil {
+	if err = app.ManagerStoreRepository.Save(store1); err != nil {
 		t.Fatalf("Failed to create store1: %v", err)
 	}
 
 	store2 := &models.Store{Name: "Test Store 2", Address: "456 Main St", City: "New York", State: "NY", ZipCode: "10002", Phone: "555-5678"}
-	if err = app.StoreRepository.Save(store2); err != nil {
+	if err = app.ManagerStoreRepository.Save(store2); err != nil {
 		t.Fatalf("Failed to create store2: %v", err)
 	}
 
@@ -141,12 +141,12 @@ func TestStoreGetAllStores(t *testing.T) {
 
 	// 创建两个商店
 	store1 := &models.Store{Name: "Test Store 1", Address: "123 Main St", City: "New York", State: "NY", ZipCode: "10001", Phone: "555-1234"}
-	if err = app.StoreRepository.Save(store1); err != nil {
+	if err = app.ManagerStoreRepository.Save(store1); err != nil {
 		t.Fatalf("Failed to create store1: %v", err)
 	}
 
 	store2 := &models.Store{Name: "Test Store 2", Address: "456 Main St", City: "New York", State: "NY", ZipCode: "10002", Phone: "555-5678"}
-	if err = app.StoreRepository.Save(store2); err != nil {
+	if err = app.ManagerStoreRepository.Save(store2); err != nil {
 		t.Fatalf("Failed to create store2: %v", err)
 	}
 
@@ -195,7 +195,7 @@ func TestStoreDeleteDefaultStore(t *testing.T) {
 
 	// 创建一个商店
 	store := &models.Store{Name: "Test Store", Address: "123 Main St", City: "New York", State: "NY", ZipCode: "10001", Phone: "555-1234"}
-	if err = app.StoreRepository.Save(store); err != nil {
+	if err = app.ManagerStoreRepository.Save(store); err != nil {
 		t.Fatalf("Failed to create store: %v", err)
 	}
 
@@ -244,7 +244,7 @@ func TestGetProductsByStoreID(t *testing.T) {
 
 	// 创建一个商店
 	store := &models.Store{Name: "Test Store", Address: "123 Main St", City: "New York", State: "NY", ZipCode: "10001", Phone: "555-1234"}
-	if err = app.StoreRepository.Save(store); err != nil {
+	if err = app.ManagerStoreRepository.Save(store); err != nil {
 		t.Fatalf("Failed to create store: %v", err)
 	}
 

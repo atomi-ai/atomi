@@ -15,10 +15,21 @@ import (
 
 type Application struct {
 	AuthWrapper    utils.AuthAppWrapper
+	BlobStorage    utils.BlobStorage
 	StripeWrapper  utils.StripeWrapper
 	AuthMiddleware middlewares.AuthMiddleware
 
+	AddressController      controllers.AddressController
+	ImageController        controllers.ImageController
+	LoginController        controllers.LoginController
+	ManagerStoreController controllers.ManagerStoreController
+	OrderController        controllers.OrderController
+	StoreController        controllers.StoreController
+	StripeController       controllers.StripeController
+	UserController         controllers.UserController
+
 	AddressRepository      repositories.AddressRepository
+	ManagerStoreRepository repositories.ManagerStoreRepository
 	OrderRepository        repositories.OrderRepository
 	OrderItemRepository    repositories.OrderItemRepository
 	ProductRepository      repositories.ProductRepository
@@ -28,44 +39,42 @@ type Application struct {
 	UserRepository         repositories.UserRepository
 	UserStoreRepository    repositories.UserStoreRepository
 
-	AddressService services.AddressService
-	OrderService   services.OrderService
-	StripeService  services.StripeService
-	UserService    services.UserService
-	UberService    services.UberService
-
-	AddressController controllers.AddressController
-	LoginController   controllers.LoginController
-	OrderController   controllers.OrderController
-	StoreController   controllers.StoreController
-	StripeController  controllers.StripeController
-	UserController    controllers.UserController
+	AddressService      services.AddressService
+	OrderService        services.OrderService
+	ProductStoreService services.ProductStoreService
+	StripeService       services.StripeService
+	UserService         services.UserService
 }
 
-func InitializeApplication(db *gorm.DB, authWrapper utils.AuthAppWrapper, stripeWrapper utils.StripeWrapper) (*Application, error) {
+func InitializeApplication(db *gorm.DB, authWrapper utils.AuthAppWrapper, blobStorage utils.BlobStorage, stripeWrapper utils.StripeWrapper) (*Application, error) {
 	wire.Build(
 		middlewares.NewAuthMiddleware,
 
-		repositories.NewUserRepository,
-		repositories.NewStoreRepository,
-		repositories.NewUserStoreRepository,
-		repositories.NewProductRepository,
-		repositories.NewProductStoreRepository,
-		repositories.NewAddressRepository,
-		repositories.NewUserAddressRepository,
-		repositories.NewOrderRepository,
-		repositories.NewOrderItemRepository,
-		services.NewAddressService,
-		services.NewUserService,
-		services.NewStripeService,
-		services.NewOrderService,
-		services.NewUberService,
 		controllers.NewAddressControl,
+		controllers.NewImageController,
 		controllers.NewLoginController,
+		controllers.NewManagerStoreController,
 		controllers.NewOrderController,
 		controllers.NewStoreController,
 		controllers.NewStripeController,
 		controllers.NewUserController,
+		repositories.NewAddressRepository,
+		repositories.NewManagerStoreRepository,
+		repositories.NewOrderItemRepository,
+		repositories.NewOrderRepository,
+		repositories.NewProductRepository,
+		repositories.NewProductStoreRepository,
+		repositories.NewStoreRepository,
+		repositories.NewUserAddressRepository,
+		repositories.NewUserRepository,
+		repositories.NewUserStoreRepository,
+		services.NewAddressService,
+		services.NewOrderService,
+		services.NewProductStoreService,
+		services.NewStripeService,
+		services.NewUserService,
+		services.NewUberService,
+
 		wire.Struct(new(Application), "*"),
 	)
 

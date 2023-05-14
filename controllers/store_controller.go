@@ -17,19 +17,26 @@ type StoreController interface {
 	GetAllStores(c *gin.Context)
 	DeleteDefaultStore(c *gin.Context)
 	GetProductsByStoreID(c *gin.Context)
+	GetStoreInfo(c *gin.Context)
 }
 
 type StoreControllerImpl struct {
-	ProductStoreRepo repositories.ProductStoreRepository
-	StoreRepo        repositories.StoreRepository
-	UserStoreRepo    repositories.UserStoreRepository
+	ManagerStoreRepository repositories.ManagerStoreRepository
+	ProductStoreRepo       repositories.ProductStoreRepository
+	StoreRepo              repositories.StoreRepository
+	UserStoreRepo          repositories.UserStoreRepository
 }
 
-func NewStoreController(psRepo repositories.ProductStoreRepository, storeRep repositories.StoreRepository, usRepo repositories.UserStoreRepository) StoreController {
+func NewStoreController(
+	managerStoreRep repositories.ManagerStoreRepository,
+	psRepo repositories.ProductStoreRepository,
+	storeRepository repositories.StoreRepository,
+	usRepo repositories.UserStoreRepository) StoreController {
 	return &StoreControllerImpl{
-		ProductStoreRepo: psRepo,
-		StoreRepo:        storeRep,
-		UserStoreRepo:    usRepo,
+		ManagerStoreRepository: managerStoreRep,
+		ProductStoreRepo:       psRepo,
+		StoreRepo:              storeRepository,
+		UserStoreRepo:          usRepo,
 	}
 }
 
@@ -139,4 +146,20 @@ func getUserIDFromContext(c *gin.Context) (int64, error) {
 	}
 
 	return user.ID, nil
+}
+
+func (sc *StoreControllerImpl) GetStoreInfo(c *gin.Context) {
+	storeID, err := strconv.ParseInt(c.Param("store_id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid store ID"})
+		return
+	}
+
+	store, err := sc.StoreRepo.FindByID(storeID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, store)
 }

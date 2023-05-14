@@ -5,10 +5,11 @@ type Role string
 const (
 	RoleUser  Role = "USER"
 	RoleAdmin Role = "ADMIN"
+	RoleMgr   Role = "MANAGER"
 )
 
 type User struct {
-	ID                       int64   `gorm:"primaryKey" json:"id"`
+	BaseModel
 	Email                    string  `gorm:"unique" json:"email"`
 	Role                     Role    `json:"role"`
 	Phone                    string  `json:"phone"`

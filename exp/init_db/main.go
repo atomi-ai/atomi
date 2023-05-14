@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"os"
 
 	"github.com/atomi-ai/atomi/utils"
@@ -20,11 +21,11 @@ const (
 )
 
 type TestEnvSetup struct {
-	ConfigRepository    repositories.ConfigRepository
-	ProductRepository   repositories.ProductRepository
-	ProductStoreService services.ProductStoreService
-	StoreRepository     repositories.StoreRepository
-	UserRepository      repositories.UserRepository
+	ConfigRepository       repositories.ConfigRepository
+	ProductRepository      repositories.ProductRepository
+	ProductStoreService    services.ProductStoreService
+	ManagerStoreRepository repositories.ManagerStoreRepository
+	UserRepository         repositories.UserRepository
 }
 
 func LoadConfig() {
@@ -54,11 +55,11 @@ func main() {
 	}
 
 	testEnvSetup := &TestEnvSetup{
-		ConfigRepository:    repositories.NewConfigRepository(db),
-		ProductRepository:   repositories.NewProductRepository(db),
-		ProductStoreService: services.NewProductStoreService(repositories.NewProductStoreRepository(db)),
-		StoreRepository:     repositories.NewStoreRepository(db),
-		UserRepository:      repositories.NewUserRepository(db),
+		ConfigRepository:       repositories.NewConfigRepository(db),
+		ProductRepository:      repositories.NewProductRepository(db),
+		ProductStoreService:    services.NewProductStoreService(repositories.NewProductRepository(db), repositories.NewProductStoreRepository(db)),
+		ManagerStoreRepository: repositories.NewManagerStoreRepository(db),
+		UserRepository:         repositories.NewUserRepository(db),
 	}
 	testEnvSetup.run(authClient)
 }
@@ -67,17 +68,9 @@ func (t *TestEnvSetup) run(authClient *auth.Client) {
 	// Initialize the database here
 
 	// 1. Check and create users in Firebase
-	admin, err := t.checkOrCreateUserInFirebase(authClient, adminEmail, "Admin", models.RoleAdmin)
-	if err != nil {
-		fmt.Printf("Error creating admin user: %v\n", err)
-		return
-	}
-
-	_, err = t.checkOrCreateUserInFirebase(authClient, userEmail, "User", models.RoleUser)
-	if err != nil {
-		fmt.Printf("Error creating user: %v\n", err)
-		return
-	}
+	admin := t.checkOrCreateUserInFirebase(authClient, adminEmail, "Admin", models.RoleAdmin)
+	_ = t.checkOrCreateUserInFirebase(authClient, userEmail, "User", models.RoleUser)
+	manager := t.checkOrCreateUserInFirebase(authClient, "mgr@atomi.ai", "Manager", models.RoleMgr)
 
 	// 2. Add products to the database
 	products := t.addProducts(admin)
@@ -99,8 +92,14 @@ func (t *TestEnvSetup) run(authClient *auth.Client) {
 		State:   "TX",
 		Phone:   "5103490222",
 	}
-	t.StoreRepository.Save(store1)
-	t.StoreRepository.Save(store2)
+	t.ManagerStoreRepository.Save(store1)
+	t.ManagerStoreRepository.Save(store2)
+	log.Infof("store1 = %v, store2 = %v", store1, store2)
+	err1 := t.ManagerStoreRepository.AssignStoreToUser(store1.ID, manager.ID)
+	err2 := t.ManagerStoreRepository.AssignStoreToUser(store2.ID, manager.ID)
+	if err1 != nil || err2 != nil {
+		panic(fmt.Sprintf("Errors in assign store to manager, %v, %v", err1, err2))
+	}
 
 	// 4. Connect products and stores
 	t.ProductStoreService.ConnectStoreAndProducts(store1, products)
@@ -109,11 +108,10 @@ func (t *TestEnvSetup) run(authClient *auth.Client) {
 	// 如果您有一个类似于Java代码中的ConfigRepository，请在此处将 testenv_status 设置为 "initialized"
 	// 如果没有，请根据您的具体实现进行修改。
 	t.ConfigRepository.Save(&models.Config{Key: "testenv_status", Value: "initialized"})
-
 	fmt.Println("Finished initializing the test environment.")
 }
 
-func (t *TestEnvSetup) checkOrCreateUserInFirebase(authClient *auth.Client, email string, displayName string, role models.Role) (*models.User, error) {
+func (t *TestEnvSetup) checkOrCreateUserInFirebase(authClient *auth.Client, email string, displayName string, role models.Role) *models.User {
 	userRecord, err := authClient.GetUserByEmail(context.Background(), email)
 	if err != nil {
 		// 如果找不到用户，创建一个新的
@@ -125,7 +123,7 @@ func (t *TestEnvSetup) checkOrCreateUserInFirebase(authClient *auth.Client, emai
 			Disabled(false)
 		userRecord, err = authClient.CreateUser(context.Background(), params)
 		if err != nil {
-			return nil, fmt.Errorf("Error creating user in Firebase: %w", err)
+			panic(fmt.Sprintf("Error creating user in Firebase: %v", err))
 		}
 	}
 
@@ -139,11 +137,10 @@ func (t *TestEnvSetup) checkOrCreateUserInFirebase(authClient *auth.Client, emai
 		}
 		_, err = t.UserRepository.Save(user)
 		if err != nil {
-			return nil, fmt.Errorf("Error saving user to database: %w", err)
+			panic(fmt.Sprintf("Error saving user to database: %v", err))
 		}
 	}
-
-	return user, nil
+	return user
 }
 
 func (t *TestEnvSetup) addProducts(admin *models.User) []*models.Product {

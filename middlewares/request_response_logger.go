@@ -11,14 +11,21 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+func shortenString(origin []byte, maxLen int) string {
+	shortened := string(origin)
+	if len(shortened) > maxLen {
+		shortened = shortened[:maxLen]
+	}
+	return shortened
+}
 func RequestResponseLogger() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var user *models.User
 		u, exist := c.Get("user")
 		if !exist {
 			user = &models.User{
-				ID:    0,
-				Email: "not-set-yet",
+				BaseModel: models.BaseModel{ID: 0},
+				Email:     "not-set-yet",
 			}
 		} else {
 			user = u.(*models.User)
@@ -33,7 +40,7 @@ func RequestResponseLogger() gin.HandlerFunc {
 			c.Request.Method,
 			c.Request.URL,
 			c.Request.Header,
-			string(reqBody),
+			shortenString(reqBody, 1000),
 		)
 
 		// 响应

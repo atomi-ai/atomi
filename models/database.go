@@ -26,7 +26,7 @@ func autoMigrateTables(db *gorm.DB, entities ...interface{}) {
 
 func AutoMigrate(db *gorm.DB) {
 	autoMigrateTables(db, &Config{}, &User{}, &Product{}, &Store{}, &ProductStore{},
-		&UserStore{}, &UserAddress{}, &Order{}, &OrderItem{})
+		&UserStore{}, &UserAddress{}, &Order{}, &OrderItem{}, &ManagerStores{})
 }
 
 func InitDB() *gorm.DB {

@@ -34,6 +34,7 @@ func (l *LoginControllerImpl) Login(c *gin.Context) {
 
 	email, _ := token.Claims["email"].(string)
 	user, err := l.UserRepository.FindByEmail(email)
+	log.Debugf("xfguo: /api/login with user: %v", user)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			user = &models.User{

@@ -10,15 +10,31 @@ import (
 	"github.com/spf13/viper"
 )
 
+func initLogrus() {
+	log.SetFormatter(&log.TextFormatter{
+		FullTimestamp: true, // 显示完整时间戳
+	})
+
+	// 设置日志级别为 Debug 级别
+	log.SetLevel(log.DebugLevel)
+}
+
 func main() {
+	// Backend initialization
 	utils.LoadConfig()
+	initLogrus()
+
+	// DB / Stripe / Azure blob
 	db := models.InitDB()
 	models.AutoMigrate(db)
 	utils.InitStripe(viper.GetString("stripeKey"))
+	blob, err := utils.NewAzureBlobStorage(viper.GetString("containerUrlWithSasToken"))
+	if err != nil {
+		log.Fatalf("Failed to initialize azure blob storage: %v", err)
+	}
 
-	app, err := application.InitializeApplication(db,
-		utils.NewFirebaseAppWrapper(utils.FirebaseAppProvider()),
-		utils.NewStripeWrapper())
+	// Create application based on the initialization.
+	app, err := application.InitializeApplication(db, utils.NewFirebaseAppWrapper(utils.FirebaseAppProvider()), blob, utils.NewStripeWrapper())
 	if err != nil {
 		log.Fatalf("Failed to initialize application: %v", err)
 	}
@@ -31,9 +47,15 @@ func main() {
 		})
 	})
 
+	r.Use(middlewares.CorsMiddleware())
 	r.Use(app.AuthMiddleware.Handler())
 	r.Use(middlewares.RequestResponseLogger()) // 添加自定义的请求/响应日志中间件
+
 	r.GET("/api/login", app.LoginController.Login)
+
+	// Manager endpoints
+	app.ManagerStoreController.RegisterRoutes(r.Group("/api/mgr"))
+	r.POST("/api/mgr/upload-image", app.ImageController.UploadImage)
 
 	// Add StoreController endpoints here
 	r.GET("/api/default-store", app.StoreController.GetDefaultStore)
@@ -41,6 +63,7 @@ func main() {
 	r.GET("/api/stores", app.StoreController.GetAllStores)
 	r.DELETE("/api/default-store", app.StoreController.DeleteDefaultStore)
 	r.GET("/api/products/:store_id", app.StoreController.GetProductsByStoreID)
+	r.GET("/api/store/:store_id", app.StoreController.GetStoreInfo)
 
 	// Add AddressController endpoints here
 	r.GET("/api/addresses", app.AddressController.GetAllAddressesForUser)
@@ -71,6 +94,9 @@ func main() {
 	r.POST("/api/uber/quote", app.OrderController.UberQuote)
 	r.POST("/api/uber/delivery", app.OrderController.CreateDelivery)
 	r.GET("/api/uber/delivery/:deliveryId", app.OrderController.GetDelivery)
+
+	log.Debugf("logrus: Debug log enabled")
+	log.Infof("logrus: Info log enabled")
 
 	// APIs below are not tested by flutter tests yet.
 	if err = r.Run(":8081"); err != nil {

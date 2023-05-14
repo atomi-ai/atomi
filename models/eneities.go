@@ -1,9 +1,5 @@
 package models
 
-import (
-	"time"
-)
-
 // ProductCategory represents the product category
 type ProductCategory string
 
@@ -15,7 +11,7 @@ const (
 
 // Product represents the product entity
 type Product struct {
-	ID          int64           `gorm:"primaryKey" json:"id"`
+	BaseModel
 	Name        string          `gorm:"unique" json:"name"`
 	Creator     *User           `gorm:"foreignKey:CreatorID" json:"-"`
 	CreatorID   int64           `json:"creator_id"`
@@ -28,25 +24,21 @@ type Product struct {
 
 // Store represents the store entity
 type Store struct {
-	ID        int64     `gorm:"primaryKey" json:"id"`
-	Name      string    `gorm:"unique" json:"name"`
-	Address   string    `json:"address"`
-	City      string    `json:"city"`
-	State     string    `json:"state"`
-	ZipCode   string    `gorm:"column:zip_code" json:"zip_code"`
-	Phone     string    `json:"phone"`
-	CreatedAt time.Time `gorm:"column:created_at" json:"created_at"`
-	UpdatedAt time.Time `gorm:"column:updated_at" json:"updated_at"`
+	BaseModel
+	Name    string `gorm:"unique" json:"name"`
+	Address string `json:"address"`
+	City    string `json:"city"`
+	State   string `json:"state"`
+	ZipCode string `gorm:"column:zip_code" json:"zip_code"`
+	Phone   string `json:"phone"`
 }
 
 // ProductStore represents the product store entity
 type ProductStore struct {
-	ID        int64     `gorm:"primaryKey" json:"id"`
-	Store     *Store    `gorm:"foreignKey:StoreID" json:"store"`
-	StoreID   int64     `gorm:"uniqueIndex:idx_store_product" json:"store_id"`
-	Product   *Product  `gorm:"foreignKey:ProductID" json:"product"`
-	ProductID int64     `gorm:"uniqueIndex:idx_store_product" json:"product_id"`
-	CreatedAt time.Time `gorm:"column:created_at" json:"created_at"`
-	UpdatedAt time.Time `gorm:"column:updated_at" json:"updated_at"`
-	IsEnable  bool      `gorm:"column:is_enable" json:"is_enable"`
+	BaseModel
+	Store     *Store   `gorm:"foreignKey:StoreID" json:"store"`
+	StoreID   int64    `gorm:"uniqueIndex:idx_store_product" json:"store_id"`
+	Product   *Product `gorm:"foreignKey:ProductID" json:"product"`
+	ProductID int64    `gorm:"uniqueIndex:idx_store_product" json:"product_id"`
+	IsEnable  bool     `gorm:"column:is_enable" json:"is_enable"`
 }
