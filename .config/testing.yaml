@@ -8,3 +8,4 @@ uberClientId: eX97MFCFJusgnPQa4EMAsb5AlLrEMJt_
 uberClientSecret: reBllapoMHL4VJoBt-noc_YwMS1gpmryKYne25XJ
 uberCustomId: 99ec5001-e0b7-5e5a-b3e8-5a382186fe83
 testMode: true
+containerUrlWithSasToken: "https://atomidrone.blob.core.windows.net/testing?sp=racwdl&st=2023-05-01T16:59:44Z&se=2024-10-04T00:59:44Z&spr=https&sv=2022-11-02&sr=c&sig=NYvndFrlEpk1cvphkWLI9UEVlLIO2bghCqYVEWXwHyA%3D"
