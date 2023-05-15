@@ -3,10 +3,11 @@ package models
 type Order struct {
 	BaseModel
 	UserID          int64       `gorm:"column:user_id" json:"user_id"`
+	StoreID         int64       `gorm:"column:store_id" json:"store_id"`
 	PaymentIntentID *string     `gorm:"column:payment_intent_id;unique" json:"payment_intent_id"`
 	DeliveryID      *string     `gorm:"column:delivery_id;unique" json:"delivery_id"`
 	OrderItems      []OrderItem `gorm:"foreignKey:OrderID" json:"order_items"`
-	DisplayStatus   OrderStatus `gorm:"-" json:"display_status"`
+	DisplayStatus   OrderStatus `gorm:"column:status" json:"display_status"`
 }
 
 type OrderStatus string

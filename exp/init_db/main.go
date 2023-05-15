@@ -22,10 +22,13 @@ const (
 
 type TestEnvSetup struct {
 	ConfigRepository       repositories.ConfigRepository
-	ProductRepository      repositories.ProductRepository
-	ProductStoreService    services.ProductStoreService
 	ManagerStoreRepository repositories.ManagerStoreRepository
+	OrderRepository        repositories.OrderRepository
+	OrderItemRepository    repositories.OrderItemRepository
+	ProductRepository      repositories.ProductRepository
 	UserRepository         repositories.UserRepository
+
+	ProductStoreService services.ProductStoreService
 }
 
 func LoadConfig() {
@@ -38,6 +41,7 @@ func LoadConfig() {
 	}
 }
 
+// TODO(lamuguo): rename the directory as init-db.
 func main() {
 	// TODO(lamuguo): Please wire to inject.
 	// App system initialization
@@ -56,6 +60,8 @@ func main() {
 
 	testEnvSetup := &TestEnvSetup{
 		ConfigRepository:       repositories.NewConfigRepository(db),
+		OrderRepository:        repositories.NewOrderRepository(db),
+		OrderItemRepository:    repositories.NewOrderItemRepository(db),
 		ProductRepository:      repositories.NewProductRepository(db),
 		ProductStoreService:    services.NewProductStoreService(repositories.NewProductRepository(db), repositories.NewProductStoreRepository(db)),
 		ManagerStoreRepository: repositories.NewManagerStoreRepository(db),
@@ -69,7 +75,7 @@ func (t *TestEnvSetup) run(authClient *auth.Client) {
 
 	// 1. Check and create users in Firebase
 	admin := t.checkOrCreateUserInFirebase(authClient, adminEmail, "Admin", models.RoleAdmin)
-	_ = t.checkOrCreateUserInFirebase(authClient, userEmail, "User", models.RoleUser)
+	user := t.checkOrCreateUserInFirebase(authClient, userEmail, "User", models.RoleUser)
 	manager := t.checkOrCreateUserInFirebase(authClient, "mgr@atomi.ai", "Manager", models.RoleMgr)
 
 	// 2. Add products to the database
@@ -104,7 +110,10 @@ func (t *TestEnvSetup) run(authClient *auth.Client) {
 	// 4. Connect products and stores
 	t.ProductStoreService.ConnectStoreAndProducts(store1, products)
 
-	// 5. Set testenv_status to "initialized"
+	// 5. Add orders for testing
+	t.addOrders(store1, products, user)
+
+	// 6. Set testenv_status to "initialized"
 	// 如果您有一个类似于Java代码中的ConfigRepository，请在此处将 testenv_status 设置为 "initialized"
 	// 如果没有，请根据您的具体实现进行修改。
 	t.ConfigRepository.Save(&models.Config{Key: "testenv_status", Value: "initialized"})
@@ -148,7 +157,7 @@ func (t *TestEnvSetup) addProducts(admin *models.User) []*models.Product {
 		{
 			Creator:  admin,
 			Name:     "Hamburger",
-			ImageURL: "images/3.png",
+			ImageURL: "https://atomidrone.blob.core.windows.net/images/3.png",
 			Price:    25,
 			Discount: 10,
 			Category: models.ProductCategoryFood,
@@ -156,7 +165,7 @@ func (t *TestEnvSetup) addProducts(admin *models.User) []*models.Product {
 		{
 			Creator:  admin,
 			Name:     "Pasta",
-			ImageURL: "images/5.png",
+			ImageURL: "https://atomidrone.blob.core.windows.net/images/5.png",
 			Price:    150,
 			Discount: 7.8,
 			Category: models.ProductCategoryFood,
@@ -164,7 +173,7 @@ func (t *TestEnvSetup) addProducts(admin *models.User) []*models.Product {
 		{
 			Creator:  admin,
 			Name:     "Akara",
-			ImageURL: "images/2.png",
+			ImageURL: "https://atomidrone.blob.core.windows.net/images/2.png",
 			Price:    10.99,
 			Discount: 0,
 			Category: models.ProductCategoryFood,
@@ -172,7 +181,7 @@ func (t *TestEnvSetup) addProducts(admin *models.User) []*models.Product {
 		{
 			Creator:  admin,
 			Name:     "Strawberry",
-			ImageURL: "images/1.png",
+			ImageURL: "https://atomidrone.blob.core.windows.net/images/1.png",
 			Price:    50,
 			Discount: 14,
 			Category: models.ProductCategoryFood,
@@ -180,7 +189,7 @@ func (t *TestEnvSetup) addProducts(admin *models.User) []*models.Product {
 		{
 			Creator:  admin,
 			Name:     "Coca-Cola",
-			ImageURL: "images/6.png",
+			ImageURL: "https://atomidrone.blob.core.windows.net/images/6.png",
 			Price:    45.12,
 			Discount: 2,
 			Category: models.ProductCategoryDrink,
@@ -188,7 +197,7 @@ func (t *TestEnvSetup) addProducts(admin *models.User) []*models.Product {
 		{
 			Creator:  admin,
 			Name:     "Lemonade",
-			ImageURL: "images/7.png",
+			ImageURL: "https://atomidrone.blob.core.windows.net/images/7.png",
 			Price:    28,
 			Discount: 5.2,
 			Category: models.ProductCategoryDrink,
@@ -196,7 +205,7 @@ func (t *TestEnvSetup) addProducts(admin *models.User) []*models.Product {
 		{
 			Creator:  admin,
 			Name:     "Vodka",
-			ImageURL: "images/8.png",
+			ImageURL: "https://atomidrone.blob.core.windows.net/images/8.png",
 			Price:    78.99,
 			Discount: 0,
 			Category: models.ProductCategoryDrink,
@@ -204,7 +213,7 @@ func (t *TestEnvSetup) addProducts(admin *models.User) []*models.Product {
 		{
 			Creator:  admin,
 			Name:     "Tequila",
-			ImageURL: "images/9.png",
+			ImageURL: "https://atomidrone.blob.core.windows.net/images/9.png",
 			Price:    1234567,
 			Discount: 3.4,
 			Category: models.ProductCategoryDrink,
@@ -219,4 +228,60 @@ func (t *TestEnvSetup) addProducts(admin *models.User) []*models.Product {
 	}
 
 	return products
+}
+
+func (t *TestEnvSetup) saveOrder(order *models.Order) error {
+	if err := t.OrderRepository.Save(order); err != nil {
+		return err
+	}
+
+	for i := range order.OrderItems {
+		orderItem := &order.OrderItems[i]
+		orderItem.OrderID = order.ID
+		if err := t.OrderItemRepository.Save(orderItem); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+func (t *TestEnvSetup) addOrders(store *models.Store, products []*models.Product, user *models.User) {
+	orders := []*models.Order{
+		{
+			UserID:        user.ID,
+			StoreID:       store.ID,
+			DisplayStatus: models.OrderStatusPaid,
+			OrderItems: []models.OrderItem{
+				{
+					Product:   products[0],
+					ProductID: products[0].ID,
+					Quantity:  2,
+				},
+				{
+					Product:   products[1],
+					ProductID: products[1].ID,
+					Quantity:  1,
+				},
+			},
+		},
+		{
+			UserID:        user.ID,
+			StoreID:       store.ID,
+			DisplayStatus: models.OrderStatusInProduction,
+			OrderItems: []models.OrderItem{
+				{
+					Product:   products[2],
+					ProductID: products[2].ID,
+					Quantity:  3,
+				},
+			},
+		},
+	}
+
+	for _, order := range orders {
+		err := t.saveOrder(order)
+		if err != nil {
+			fmt.Printf("Error saving order to database: %v\n", err)
+		}
+	}
 }
