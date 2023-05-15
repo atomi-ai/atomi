@@ -8,7 +8,9 @@ import (
 type OrderRepository interface {
 	FindByUserID(userID int64) ([]models.Order, error)
 	GetByID(orderID int64) (*models.Order, error)
+	GetOrdersByStoreID(storeID int64) ([]models.Order, error)
 	Save(order *models.Order) error
+	UpdateOrderStatus(orderID int64, status models.OrderStatus) error
 }
 
 type OrderItemRepository interface {
@@ -37,10 +39,22 @@ func (repo *orderRepositoryImpl) FindByUserID(userID int64) ([]models.Order, err
 	return orders, err
 }
 
+func (repo *orderRepositoryImpl) GetOrdersByStoreID(storeID int64) ([]models.Order, error) {
+	var orders []models.Order
+	if err := repo.db.Where("store_id = ?", storeID).Find(&orders).Error; err != nil {
+		return nil, err
+	}
+	return orders, nil
+}
+
 func (repo *orderRepositoryImpl) GetByID(orderID int64) (*models.Order, error) {
 	var order models.Order
 	err := repo.db.Preload("OrderItems.Product").First(&order, orderID).Error
 	return &order, err
+}
+
+func (repo *orderRepositoryImpl) UpdateOrderStatus(orderID int64, status models.OrderStatus) error {
+	return repo.db.Model(&models.Order{}).Where("id = ?", orderID).Update("status", status).Error
 }
 
 func (repo *orderRepositoryImpl) Save(order *models.Order) error {

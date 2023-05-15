@@ -3,7 +3,6 @@ package repositories
 import (
 	"github.com/atomi-ai/atomi/models"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 type ProductRepository interface {
@@ -25,10 +24,7 @@ func NewProductRepository(db *gorm.DB) ProductRepository {
 
 // Save saves the given product in the database
 func (r *productRepositoryImpl) Save(product *models.Product) error {
-	return r.db.Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "name"}},
-		DoUpdates: clause.AssignmentColumns([]string{"id", "creator_id", "description", "price", "discount", "category", "image_url"}),
-	}).Save(product).Error
+	return r.db.FirstOrCreate(product, "name = ?", product.Name).Error
 }
 
 // FindByID finds a product by its ID
