@@ -45,6 +45,9 @@ func FirebaseAppProvider() *firebase.App {
 	if viper.GetBool("firebaseEnableEmulator") {
 		os.Setenv("FIREBASE_AUTH_EMULATOR_HOST", viper.GetString("firebaseAuthEmulatorHost"))
 	}
+	// TODO(lamuguo): 得有个check来确认这个cred file被正确的load了，
+	// 像check azure storage那样。也许创建一个validate@atomi.ai的token，然后
+	// 让这个模块来验证下，看看是不是能正确decode。
 	opt := option.WithCredentialsFile(viper.GetString("firebaseCredentialsFile"))
 	firebaseApp, err := firebase.NewApp(context.Background(), nil, opt)
 	if err != nil {
