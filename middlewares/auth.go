@@ -40,6 +40,7 @@ func (a authMiddlewareImpl) Handler() gin.HandlerFunc {
 		ctx := context.Background()
 		decodedToken, err := a.AuthWrapper.AuthAndDecode(ctx, idToken)
 		if err != nil {
+			log.Errorf("Errors in authenticating/decoding the context, %v", err)
 			c.AbortWithStatusJSON(500, gin.H{"error": "Errors in authenticating/decoding the context"})
 			return
 		}
