@@ -28,16 +28,17 @@ type Application struct {
 	StripeController       controllers.StripeController
 	UserController         controllers.UserController
 
-	AddressRepository      repositories.AddressRepository
-	ManagerStoreRepository repositories.ManagerStoreRepository
-	OrderRepository        repositories.OrderRepository
-	OrderItemRepository    repositories.OrderItemRepository
-	ProductRepository      repositories.ProductRepository
-	ProductStoreRepository repositories.ProductStoreRepository
-	StoreRepository        repositories.StoreRepository
-	UserAddressRepository  repositories.UserAddressRepository
-	UserRepository         repositories.UserRepository
-	UserStoreRepository    repositories.UserStoreRepository
+	AddressRepository           repositories.AddressRepository
+	DeleteUserRequestRepository repositories.DeleteUserRequestRepository
+	ManagerStoreRepository      repositories.ManagerStoreRepository
+	OrderRepository             repositories.OrderRepository
+	OrderItemRepository         repositories.OrderItemRepository
+	ProductRepository           repositories.ProductRepository
+	ProductStoreRepository      repositories.ProductStoreRepository
+	StoreRepository             repositories.StoreRepository
+	UserAddressRepository       repositories.UserAddressRepository
+	UserRepository              repositories.UserRepository
+	UserStoreRepository         repositories.UserStoreRepository
 
 	AddressService      services.AddressService
 	OrderService        services.OrderService
@@ -59,6 +60,7 @@ func InitializeApplication(db *gorm.DB, authWrapper utils.AuthAppWrapper, blobSt
 		controllers.NewStripeController,
 		controllers.NewUserController,
 		repositories.NewAddressRepository,
+		repositories.NewDeleteUserRequestRepository,
 		repositories.NewManagerStoreRepository,
 		repositories.NewOrderItemRepository,
 		repositories.NewOrderRepository,

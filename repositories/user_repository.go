@@ -1,7 +1,7 @@
 package repositories
 
 import (
-	"github.com/atomi-ai/atomi/models" // Replace with your actual repo import path
+	"github.com/atomi-ai/atomi/models"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -32,6 +32,7 @@ func (repo *userRepositoryImpl) GetByID(userID int64) (*models.User, error) {
 	return &user, err
 }
 
+// TODO(lamuguo): Review所有update操作.
 func (repo *userRepositoryImpl) Save(user *models.User) (*models.User, error) {
 	return user, repo.db.Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "email"}},

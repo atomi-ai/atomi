@@ -56,6 +56,7 @@ func main() {
 	// Manager endpoints
 	app.ManagerStoreController.RegisterRoutes(r.Group("/api/mgr"))
 	r.POST("/api/mgr/upload-image", app.ImageController.UploadImage)
+	r.DELETE("/api/user/request", app.UserController.SubmitDeleteUserRequest)
 
 	// Add StoreController endpoints here
 	r.GET("/api/default-store", app.StoreController.GetDefaultStore)

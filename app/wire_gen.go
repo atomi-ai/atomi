@@ -42,35 +42,37 @@ func InitializeApplication(db *gorm.DB, authWrapper utils.AuthAppWrapper, blobSt
 	userStoreRepository := repositories.NewUserStoreRepository(db)
 	storeController := controllers.NewStoreController(managerStoreRepository, productStoreRepository, storeRepository, userStoreRepository)
 	stripeController := controllers.NewStripeController(userService, stripeService, orderService, uberService, addressRepository)
-	userController := controllers.NewUserController(userService)
+	deleteUserRequestRepository := repositories.NewDeleteUserRequestRepository(db)
+	userController := controllers.NewUserController(userService, deleteUserRequestRepository)
 	application := &Application{
-		AuthWrapper:            authWrapper,
-		BlobStorage:            blobStorage,
-		StripeWrapper:          stripeWrapper,
-		AuthMiddleware:         authMiddleware,
-		AddressController:      addressController,
-		ImageController:        imageController,
-		LoginController:        loginController,
-		ManagerStoreController: managerStoreController,
-		OrderController:        orderController,
-		StoreController:        storeController,
-		StripeController:       stripeController,
-		UserController:         userController,
-		AddressRepository:      addressRepository,
-		ManagerStoreRepository: managerStoreRepository,
-		OrderRepository:        orderRepository,
-		OrderItemRepository:    orderItemRepository,
-		ProductRepository:      productRepository,
-		ProductStoreRepository: productStoreRepository,
-		StoreRepository:        storeRepository,
-		UserAddressRepository:  userAddressRepository,
-		UserRepository:         userRepository,
-		UserStoreRepository:    userStoreRepository,
-		AddressService:         addressService,
-		OrderService:           orderService,
-		ProductStoreService:    productStoreService,
-		StripeService:          stripeService,
-		UserService:            userService,
+		AuthWrapper:                 authWrapper,
+		BlobStorage:                 blobStorage,
+		StripeWrapper:               stripeWrapper,
+		AuthMiddleware:              authMiddleware,
+		AddressController:           addressController,
+		ImageController:             imageController,
+		LoginController:             loginController,
+		ManagerStoreController:      managerStoreController,
+		OrderController:             orderController,
+		StoreController:             storeController,
+		StripeController:            stripeController,
+		UserController:              userController,
+		AddressRepository:           addressRepository,
+		DeleteUserRequestRepository: deleteUserRequestRepository,
+		ManagerStoreRepository:      managerStoreRepository,
+		OrderRepository:             orderRepository,
+		OrderItemRepository:         orderItemRepository,
+		ProductRepository:           productRepository,
+		ProductStoreRepository:      productStoreRepository,
+		StoreRepository:             storeRepository,
+		UserAddressRepository:       userAddressRepository,
+		UserRepository:              userRepository,
+		UserStoreRepository:         userStoreRepository,
+		AddressService:              addressService,
+		OrderService:                orderService,
+		ProductStoreService:         productStoreService,
+		StripeService:               stripeService,
+		UserService:                 userService,
 	}
 	return application, nil
 }
@@ -92,16 +94,17 @@ type Application struct {
 	StripeController       controllers.StripeController
 	UserController         controllers.UserController
 
-	AddressRepository      repositories.AddressRepository
-	ManagerStoreRepository repositories.ManagerStoreRepository
-	OrderRepository        repositories.OrderRepository
-	OrderItemRepository    repositories.OrderItemRepository
-	ProductRepository      repositories.ProductRepository
-	ProductStoreRepository repositories.ProductStoreRepository
-	StoreRepository        repositories.StoreRepository
-	UserAddressRepository  repositories.UserAddressRepository
-	UserRepository         repositories.UserRepository
-	UserStoreRepository    repositories.UserStoreRepository
+	AddressRepository           repositories.AddressRepository
+	DeleteUserRequestRepository repositories.DeleteUserRequestRepository
+	ManagerStoreRepository      repositories.ManagerStoreRepository
+	OrderRepository             repositories.OrderRepository
+	OrderItemRepository         repositories.OrderItemRepository
+	ProductRepository           repositories.ProductRepository
+	ProductStoreRepository      repositories.ProductStoreRepository
+	StoreRepository             repositories.StoreRepository
+	UserAddressRepository       repositories.UserAddressRepository
+	UserRepository              repositories.UserRepository
+	UserStoreRepository         repositories.UserStoreRepository
 
 	AddressService      services.AddressService
 	OrderService        services.OrderService
