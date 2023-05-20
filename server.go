@@ -27,6 +27,7 @@ func main() {
 	// DB / Stripe / Azure blob
 	db := models.InitDB()
 	models.AutoMigrate(db)
+	utils.LoadTaxRates(db)
 	utils.InitStripe(viper.GetString("stripeKey"))
 	blob, err := utils.NewAzureBlobStorage(viper.GetString("containerUrlWithSasToken"))
 	if err != nil {
@@ -95,6 +96,7 @@ func main() {
 	r.POST("/api/uber/quote", app.OrderController.UberQuote)
 	r.POST("/api/uber/delivery", app.OrderController.CreateDelivery)
 	r.GET("/api/uber/delivery/:deliveryId", app.OrderController.GetDelivery)
+	r.POST("/api/tax-rate", app.OrderController.GetTaxRate)
 
 	log.Debugf("logrus: Debug log enabled")
 	log.Infof("logrus: Info log enabled")
