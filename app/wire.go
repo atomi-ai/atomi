@@ -39,12 +39,14 @@ type Application struct {
 	UserAddressRepository       repositories.UserAddressRepository
 	UserRepository              repositories.UserRepository
 	UserStoreRepository         repositories.UserStoreRepository
+	TaxRateRepository           repositories.TaxRateRepository
 
 	AddressService      services.AddressService
 	OrderService        services.OrderService
 	ProductStoreService services.ProductStoreService
 	StripeService       services.StripeService
 	UserService         services.UserService
+	TaxRateService      services.TaxRateService
 }
 
 func InitializeApplication(db *gorm.DB, authWrapper utils.AuthAppWrapper, blobStorage utils.BlobStorage, stripeWrapper utils.StripeWrapper) (*Application, error) {
@@ -70,12 +72,14 @@ func InitializeApplication(db *gorm.DB, authWrapper utils.AuthAppWrapper, blobSt
 		repositories.NewUserAddressRepository,
 		repositories.NewUserRepository,
 		repositories.NewUserStoreRepository,
+		repositories.NewTaxRateRepository,
 		services.NewAddressService,
 		services.NewOrderService,
 		services.NewProductStoreService,
 		services.NewStripeService,
 		services.NewUserService,
 		services.NewUberService,
+		services.NewTaxRateService,
 
 		wire.Struct(new(Application), "*"),
 	)
