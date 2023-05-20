@@ -15,17 +15,20 @@ type OrderController interface {
 	UberQuote(c *gin.Context)
 	GetDelivery(c *gin.Context)
 	CreateDelivery(c *gin.Context)
+	GetTaxRate(c *gin.Context)
 }
 
 type OrderControllerImpl struct {
-	OrderService services.OrderService
-	UberService  services.UberService
+	OrderService   services.OrderService
+	UberService    services.UberService
+	TaxRateService services.TaxRateService
 }
 
-func NewOrderController(orderService services.OrderService, uberService services.UberService) OrderController {
+func NewOrderController(orderService services.OrderService, uberService services.UberService, taxRateService services.TaxRateService) OrderController {
 	return &OrderControllerImpl{
-		OrderService: orderService,
-		UberService:  uberService,
+		OrderService:   orderService,
+		UberService:    uberService,
+		TaxRateService: taxRateService,
 	}
 }
 
@@ -110,4 +113,18 @@ func (oc *OrderControllerImpl) CreateDelivery(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response)
+}
+
+func (oc *OrderControllerImpl) GetTaxRate(c *gin.Context) {
+	var address models.Address
+	if err := c.BindJSON(&address); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	taxRate, err := oc.TaxRateService.GetTaxRateByZipCodeAndState(&address)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, taxRate)
 }
