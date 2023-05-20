@@ -63,7 +63,14 @@ func LoadTaxRates(db *gorm.DB) {
 			mysql.RegisterLocalFile(path)
 
 			fmt.Println("Processing file:", path)
-			stmt := fmt.Sprintf("LOAD DATA LOCAL INFILE '%s' INTO TABLE tax_rates FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' IGNORE 1 LINES (State, ZipCode, TaxRegionName, EstimatedCombinedRate, StateRate, EstimatedCountyRate, EstimatedCityRate, EstimatedSpecialRate, RiskLevel) SET created_at = NOW(), updated_at = NOW(), csv='%s'", path, path)
+			stmt := fmt.Sprintf(`
+				LOAD DATA LOCAL INFILE '%s' INTO TABLE tax_rates 
+				FIELDS TERMINATED BY ',' 
+				LINES TERMINATED BY '\n' 
+				IGNORE 1 LINES 
+				(tax_state, zip_code, tax_region_name, estimated_combined_rate, state_rate, estimated_county_rate, estimated_city_rate, estimated_special_rate, risk_level) 
+				SET created_at = NOW(), updated_at = NOW(), csv='%s'
+			`, path, path)
 			db.Exec(stmt)
 			if db.Error != nil {
 				log.Printf("Error load tax rates file: %s", db.Error)
