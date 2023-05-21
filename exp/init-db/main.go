@@ -3,8 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"os"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/atomi-ai/atomi/utils"
 
@@ -48,6 +49,7 @@ func main() {
 	LoadConfig()
 	db := models.InitDB()
 	models.AutoMigrate(db)
+	utils.LoadTaxRates(db)
 	utils.InitStripe(viper.GetString("stripeKey"))
 	firebaseApp := utils.FirebaseAppProvider()
 
