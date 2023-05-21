@@ -68,7 +68,7 @@ func LoadTaxRates(db *gorm.DB) {
 				FIELDS TERMINATED BY ',' 
 				LINES TERMINATED BY '\n' 
 				IGNORE 1 LINES 
-				(tax_state, zip_code, tax_region_name, estimated_combined_rate, state_rate, estimated_county_rate, estimated_city_rate, estimated_special_rate, risk_level) 
+				(tax_state, zip_code, estimated_combined_rate) 
 				SET created_at = NOW(), updated_at = NOW(), csv='%s'
 			`, path, path)
 			db.Exec(stmt)

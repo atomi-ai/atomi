@@ -27,3 +27,11 @@ package main
 - 这样，我们必然有这样的循环依赖： controller => app => controller。理论上，只要test cases在controller package下，我们就没有办法跳出这个循环。
 - 解决这样的循环，我目前想到的一个办法（理论上应该是唯一的），就是test cases放到test/controllers package里面去，这样就变成 test/controllers => app => controllers，就没有循环了。
 
+## tax-rates-csv的生成
+网站下载的csv文件比较大，使用以下命令将其处理保留State,ZipCode,EstimatedCombinedRate三列:
+```
+for file in TAXRATES_ZIP5/*.csv; do
+  filename=$(basename "$file" .csv)
+  cut -d ',' -f 1,2,4 "$file" > "tax-rates-csv/$filename.csv"
+done
+```
