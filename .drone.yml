@@ -12,6 +12,7 @@ steps:
       from_secret: ATOMI_DRONE_TOKEN
   commands:
     - build_number=$(drone build last ${DRONE_REPO_OWNER}/grocery --branch master | grep "Number:" | awk '{print $2}')
+    - echo $build_number
     - drone build promote ${DRONE_REPO_OWNER}/grocery $build_number production
   # TODO(lamuguo): 其实trigger grocery test不是一个对的做法。正确的做法应该是
   # clone grocery code，然后确保grocery的end-to-end能正确的跑通。
